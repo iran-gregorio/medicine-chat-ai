@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "Medicine Chat AI",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "homeTitle": "Home",
+  "@homeTitle": {
+    "description": "Title of the home screen"
+  },
+  "scanTitle": "Scan Prescription",
+  "@scanTitle": {
+    "description": "Title of the scan screen"
+  },
+  "chatTitle": "Chat",
+  "@chatTitle": {
+    "description": "Title of the chat screen"
+  }
+}

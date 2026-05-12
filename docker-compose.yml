@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: ankane/pgvector:latest
+    container_name: medicine_chat_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medicine_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medicine_password}
+      POSTGRES_DB: ${POSTGRES_DB:-medicine_chat}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medicine_user -d medicine_chat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: medicine_chat_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://medicine_user:medicine_password@db:5432/medicine_chat
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-test-secret-key}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:

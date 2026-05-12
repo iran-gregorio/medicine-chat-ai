@@ -1,0 +1,19 @@
+{
+  "@@locale": "pt",
+  "appTitle": "Medicine Chat AI",
+  "@appTitle": {
+    "description": "O título da aplicação"
+  },
+  "homeTitle": "Início",
+  "@homeTitle": {
+    "description": "Título da tela inicial"
+  },
+  "scanTitle": "Escanear Receita",
+  "@scanTitle": {
+    "description": "Título da tela de escaneamento"
+  },
+  "chatTitle": "Chat",
+  "@chatTitle": {
+    "description": "Título da tela de chat"
+  }
+}

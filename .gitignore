@@ -1,0 +1,44 @@
+# Ambiente Python
+backend/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Docker
+.docker/
+
+# IDEs / Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MacOS
+.DS_Store
+
+# Diretório de dados locais do PGVector/PostgreSQL
+postgres_data/
+
+# Outros diretórios de apps
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/.pub-cache/
+apps/web/node_modules/
+apps/web/dist/
+apps/web/build/
+
+# Diretório local do agente (não deve ir ao repositório)
+.gemini/
+
+# Archive do OpenSpec (histórico local de trabalho)
+openspec/changes/archive/

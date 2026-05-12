@@ -1,0 +1,22 @@
+schema: spec-driven
+
+context: |
+  Tech stack: 
+  - Mobile: Flutter (iOS/Android)
+  - Web: React (Vite, TailwindCSS)
+  - Backend: Python (FastAPI, LangChain)
+  - Database: PostgreSQL (with pgvector extension)
+  Domain: Plataforma de saúde com assistente IA multimodal para simplificação de bulas e receitas médicas utilizando técnica RAG (com dados abertos da ANVISA).
+  Constraints: Conformidade e segurança de dados (LGPD), garantindo a anonimização de PIIs ao processar receitas médicas.
+
+rules:
+  proposal:
+    - Sempre inclua uma seção de "Non-goals" (O que não é).
+  design:
+    - Detalhar a arquitetura de RAG e a estratégia de ingestão de dados.
+    - Descrever como PIIs (dados sensíveis) serão anonimizados nas imagens/textos.
+  tasks:
+    - Quebre as tarefas em partes que envolvam apenas um serviço de cada vez (ex: só Backend, ou só Flutter).
+  spec:
+    - Toda especificação (spec) criada MUST ser escrita em Português (pt-BR).
+    - Garanta que todo o código relacionado seja coberto e validado por testes automatizados (unitários e integrados).
