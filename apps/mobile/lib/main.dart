@@ -31,7 +31,8 @@ class MyApp extends ConsumerWidget {
         Locale('pt', 'BR'),
         Locale('en', 'US'),
       ],
-      routerConfig: appRouter,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }
+

@@ -1,9 +1,16 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from './store/authStore';
+import { api } from './lib/api';
 import HomePage from './pages/HomePage';
 import ScanPage from './pages/ScanPage';
 import ChatPage from './pages/ChatPage';
-import { Bot, Home, ScanLine, MessageSquare } from 'lucide-react';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import { PrivateRoute } from './components/PrivateRoute';
+import { Bot, Home, ScanLine, MessageSquare, LogOut } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'homeTitle', icon: Home, exact: true },
@@ -13,6 +20,19 @@ const navItems = [
 
 function Sidebar() {
   const { t, i18n } = useTranslation();
+  const logout = useAuthStore((state) => state.logout);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
+
+  const handleLogout = async () => {
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refresh_token: refreshToken });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    logout();
+  };
 
   return (
     <aside style={{
@@ -76,7 +96,7 @@ function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '16px', borderTop: '1px solid #E2E8F0' }}>
+      <div style={{ padding: '16px', borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button
           onClick={() => i18n.changeLanguage(i18n.language === 'pt' ? 'en' : 'pt')}
           style={{
@@ -89,24 +109,54 @@ function Sidebar() {
         >
           🌐 {i18n.language === 'pt' ? 'English' : 'Português'}
         </button>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%', padding: '8px 14px',
+            borderRadius: '10px', border: 'none',
+            background: 'transparent', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 500, color: '#EF4444',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+        >
+          <LogOut size={16} />
+          {t('auth.logout', 'Sair')}
+        </button>
       </div>
     </aside>
+  );
+}
+
+function AuthenticatedLayout() {
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F8FF' }}>
+      <Sidebar />
+      <main style={{ marginLeft: '240px', flex: 1, minHeight: '100vh' }}>
+        <Outlet />
+      </main>
+    </div>
   );
 }
 
 function App() {
   return (
     <BrowserRouter>
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F8FF' }}>
-        <Sidebar />
-        <main style={{ marginLeft: '240px', flex: 1, minHeight: '100vh' }}>
-          <Routes>
+      <Routes>
+        {/* Public Auth Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* Private Routes with Sidebar Layout */}
+        <Route element={<PrivateRoute />}>
+          <Route element={<AuthenticatedLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/scan" element={<ScanPage />} />
             <Route path="/chat" element={<ChatPage />} />
-          </Routes>
-        </main>
-      </div>
+          </Route>
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }
