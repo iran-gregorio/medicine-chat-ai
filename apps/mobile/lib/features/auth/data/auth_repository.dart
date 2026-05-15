@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  final String baseUrl = const String.fromEnvironment(
-    'API_URL', 
+  const String baseUrl = String.fromEnvironment(
+    'API_URL',
     // Default to 10.0.2.2 for Android Emulator, localhost for iOS Simulator
     defaultValue: 'http://localhost:8000',
   );

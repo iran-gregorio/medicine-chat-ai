@@ -7,7 +7,8 @@ class ChatMessage {
   final bool isUser;
   final String time;
 
-  const ChatMessage({required this.text, required this.isUser, required this.time});
+  const ChatMessage(
+      {required this.text, required this.isUser, required this.time});
 }
 
 class ChatPage extends StatefulWidget {
@@ -110,7 +111,8 @@ class _ChatPageState extends State<ChatPage> {
                 ),
               ],
             ),
-            child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 22),
+            child: const Icon(Icons.smart_toy_rounded,
+                color: Colors.white, size: 22),
           ),
           const SizedBox(width: 10),
           const Column(
@@ -169,7 +171,8 @@ class _ChatPageState extends State<ChatPage> {
                     style: const TextStyle(fontSize: 15),
                     decoration: const InputDecoration(
                       hintText: 'Descreva seus sintomas ou dúvida...',
-                      hintStyle: TextStyle(color: AppTheme.textGrey, fontSize: 14),
+                      hintStyle:
+                          TextStyle(color: AppTheme.textGrey, fontSize: 14),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -183,7 +186,8 @@ class _ChatPageState extends State<ChatPage> {
                     color: Color(0xFFEF6C00),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: Colors.white, size: 18),
                 ),
               ],
             ),
@@ -221,7 +225,8 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                  child: const Icon(Icons.arrow_forward_rounded,
+                      color: Colors.white, size: 20),
                 ),
               ),
             ],
@@ -257,21 +262,23 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isUser) ...[
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [Color(0xFF60A5FA), AppTheme.primaryBlue],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 18),
+              child: const Icon(Icons.smart_toy_rounded,
+                  color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
           ],
@@ -292,7 +299,8 @@ class _MessageBubble extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     message.time,
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textGrey),
+                    style:
+                        const TextStyle(fontSize: 11, color: AppTheme.textGrey),
                   ),
                 ],
               ),
@@ -301,7 +309,8 @@ class _MessageBubble extends StatelessWidget {
                 constraints: BoxConstraints(
                   maxWidth: MediaQuery.of(context).size.width * 0.65,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isUser ? const Color(0xFFDEEBFF) : Colors.white,
                   borderRadius: BorderRadius.only(
@@ -338,7 +347,8 @@ class _MessageBubble extends StatelessWidget {
                 color: AppTheme.primaryBlue.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person, color: AppTheme.primaryBlue, size: 20),
+              child: const Icon(Icons.person,
+                  color: AppTheme.primaryBlue, size: 20),
             ),
           ],
         ],
