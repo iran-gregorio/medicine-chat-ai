@@ -1,5 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.medicinechat.medicine_chat_mobile">
+
+    <!-- Camera permission for scanning medicine boxes and prescriptions -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Gallery access: covers Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- Gallery access: covers Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Camera feature declaration (required=false allows installation on devices without camera) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
    <application
         android:label="medicine_chat_mobile"
         android:name="${applicationName}"

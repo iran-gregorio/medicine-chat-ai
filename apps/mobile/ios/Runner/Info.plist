@@ -68,5 +68,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>O Medicine Chat AI usa a câmera para escanear caixas de medicamentos e receitas médicas.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O Medicine Chat AI acessa sua galeria para que você possa enviar fotos de medicamentos e receitas.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O Medicine Chat AI pode salvar imagens escaneadas em sua galeria de fotos.</string>
 </dict>
 </plist>
