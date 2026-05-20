@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -361,14 +362,101 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Text(
-                  message.content,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppTheme.textDark,
-                    height: 1.45,
-                  ),
-                ),
+                child: isUser
+                    ? Text(
+                        message.content,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppTheme.textDark,
+                          height: 1.45,
+                        ),
+                      )
+                    : MarkdownBody(
+                        data: message.content,
+                        shrinkWrap: true,
+                        styleSheet: MarkdownStyleSheet(
+                          p: const TextStyle(
+                            fontSize: 15,
+                            color: AppTheme.textDark,
+                            height: 1.55,
+                          ),
+                          strong: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            height: 1.55,
+                          ),
+                          em: const TextStyle(
+                            fontSize: 15,
+                            fontStyle: FontStyle.italic,
+                            color: Color(0xFF334155),
+                            height: 1.55,
+                          ),
+                          listBullet: const TextStyle(
+                            fontSize: 15,
+                            color: AppTheme.primaryBlue,
+                            height: 1.55,
+                          ),
+                          code: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                            color: AppTheme.primaryBlue,
+                            backgroundColor:
+                                const Color(0xFFF1F5F9),
+                          ),
+                          codeblockDecoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          codeblockPadding: const EdgeInsets.all(12),
+                          h1: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
+                            height: 1.3,
+                          ),
+                          h2: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                            height: 1.35,
+                          ),
+                          h3: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E293B),
+                            height: 1.4,
+                          ),
+                          blockquote: const TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            color: Color(0xFF475569),
+                            height: 1.5,
+                          ),
+                          blockquoteDecoration: const BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: AppTheme.primaryBlue,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          blockquotePadding: const EdgeInsets.only(
+                            left: 12,
+                          ),
+                          horizontalRuleDecoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: Color(0xFFE2E8F0),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),
