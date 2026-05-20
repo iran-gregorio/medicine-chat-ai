@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Esta especificação define os requisitos para ingestão dos dados abertos da ANVISA e vetorização das bulas de medicamentos para viabilizar consultas semânticas via RAG.
+
+## Requirements
 
 ### Requirement: Ingestão de dados abertos da ANVISA
 O sistema MUST ter um pipeline programado (por exemplo, via Cronjob ou Celery/Airflow em Python) para baixar, limpar e estruturar os dados abertos em CSV referentes a medicamentos registrados na ANVISA.
@@ -16,4 +19,8 @@ O sistema MUST pegar o conteúdo textual descritivo dos medicamentos/bulas inger
 
 ### Requirement: Cobertura e Validação por Testes
 O sistema MUST garantir que todo o código correspondente a esta spec seja coberto e validado por testes automatizados (unitários e integrados), com suporte a execução no ambiente de testes local (docker-compose).
+
+#### Scenario: Suite de testes de ingestão de dados
+- **WHEN** a suite de testes é executada
+- **THEN** os testes validam o pipeline de ingestão e a vetorização correta das bulas
 

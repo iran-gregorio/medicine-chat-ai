@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Esta especificação define os requisitos para leitura multimodal de imagens de medicamentos e anonimização automática de dados pessoais (PII) antes da persistência.
+
+## Requirements
 
 ### Requirement: Leitura multimodal de imagens médicas
 O sistema MUST ser capaz de receber imagens (JPEG, PNG, HEIC) enviadas pelos aplicativos móvel e web e processá-las utilizando um modelo de IA multimodal (LLM) para extrair o texto contido nelas.
@@ -16,4 +19,8 @@ O sistema MUST implementar um processo de anonimização (via regex, NLP Presidi
 
 ### Requirement: Cobertura e Validação por Testes
 O sistema MUST garantir que todo o código correspondente a esta spec seja coberto e validado por testes automatizados (unitários e integrados), com suporte a execução no ambiente de testes local (docker-compose).
+
+#### Scenario: Suite de testes de processamento de imagens
+- **WHEN** a suite de testes é executada
+- **THEN** os testes validam a extração multimodal e a anonimização de PII
 

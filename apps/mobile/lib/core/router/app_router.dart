@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/scan/presentation/pages/scan_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
+import '../../features/chat/presentation/pages/conversation_list_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -82,11 +83,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/scan',
         builder: (context, state) => const ScanPage(),
       ),
+      // Chat: lista de conversas
       GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatPage(),
+        path: '/conversations',
+        builder: (context, state) => const ConversationListPage(),
+      ),
+      // Chat: conversa específica por ID
+      GoRoute(
+        path: '/chat/:conversationId',
+        builder: (context, state) {
+          final conversationId =
+              state.pathParameters['conversationId'] ?? '';
+          return ChatPage(conversationId: conversationId);
+        },
       ),
     ],
   );
 });
-

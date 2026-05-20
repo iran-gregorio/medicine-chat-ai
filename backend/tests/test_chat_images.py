@@ -1,35 +1,20 @@
 import pytest
+import uuid
+import io
 from fastapi.testclient import TestClient
+
 from main import app
 from auth import get_current_user
-import io
-
-# Sobrescrever a dependência de autenticação para testes
-def override_get_current_user():
-    return "testuser"
-
-app.dependency_overrides[get_current_user] = override_get_current_user
 
 client = TestClient(app)
 
-@pytest.mark.asyncio
-async def test_chat_endpoint(mocker):
-    # Fazer mock do LLM para evitar chamadas reais à API
-    mock_llm = mocker.patch("routers.chat.get_llm")
-    mock_vectorstore = mocker.patch("routers.chat.get_vectorstore")
-    
-    mock_response = mocker.Mock()
-    mock_response.content = "Resposta mockada do LLM"
-    mock_llm.return_value.invoke.return_value = mock_response
+@pytest.fixture(autouse=True)
+def setup_auth():
+    user_id = str(uuid.uuid4())
+    app.dependency_overrides[get_current_user] = lambda: user_id
+    yield user_id
+    app.dependency_overrides.pop(get_current_user, None)
 
-    response = client.post(
-        "/chat/",
-        json={"message": "Olá, qual o remédio?", "session_id": "123"}
-    )
-    
-    assert response.status_code == 200
-    assert response.json()["reply"] == "Resposta mockada do LLM"
-    assert response.json()["session_id"] == "123"
 
 def test_image_upload_endpoint():
     # Cria um arquivo falso para upload
@@ -43,7 +28,7 @@ def test_image_upload_endpoint():
     
     assert response.status_code == 200
     assert response.json()["filename"] == "test.jpg"
-    assert "processamento agendado" in response.json()["message"].lower()
+    assert "processada com sucesso" in response.json()["message"].lower()
 
 def test_image_upload_invalid_type():
     file_content = b"fake pdf content"

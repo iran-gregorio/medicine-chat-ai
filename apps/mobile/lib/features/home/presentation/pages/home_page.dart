@@ -64,7 +64,7 @@ class HomePage extends StatelessWidget {
                   icon: '🤖',
                   title: 'Falar com IA',
                   subtitle: 'Tire dúvidas sobre medicamentos',
-                  onTap: () => context.go('/chat'),
+                  onTap: () => context.go('/conversations'),
                 ),
                 const SizedBox(height: 14),
                 // Scan Card

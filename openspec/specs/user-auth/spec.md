@@ -1,4 +1,7 @@
-## ADDED Requirements
+## Purpose
+Esta especificação define os requisitos para autenticação e registro de usuários no sistema, incluindo login via email/senha e OAuth, e sincronização cross-platform.
+
+## Requirements
 
 ### Requirement: Registro e Login
 O sistema MUST permitir que os usuários se registrem e façam login através de email/senha ou provedores sociais (OAuth), gerando um token JWT seguro para comunicação com a API em Python.
@@ -16,4 +19,8 @@ O sistema MUST garantir que, uma vez autenticado via Web (React) ou Mobile (Flut
 
 ### Requirement: Cobertura e Validação por Testes
 O sistema MUST garantir que todo o código correspondente a esta spec seja coberto e validado por testes automatizados (unitários e integrados), com suporte a execução no ambiente de testes local (docker-compose).
+
+#### Scenario: Suite de testes de autenticação
+- **WHEN** a suite de testes é executada
+- **THEN** os testes validam o fluxo de registro, login e proteção de rotas
 

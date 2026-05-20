@@ -1,0 +1,6 @@
+{
+  "tests/test_auth.py": true,
+  "tests/test_chat_images.py": true,
+  "tests/test_chat_memory.py": true,
+  "tests/test_main.py": true
+}
