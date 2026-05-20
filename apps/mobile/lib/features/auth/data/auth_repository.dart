@@ -97,4 +97,23 @@ class AuthRepository {
       },
     );
   }
+
+  Future<Map<String, dynamic>> getMe() async {
+    final response = await _dio.get('/auth/me');
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.post(
+      '/auth/change-password',
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }

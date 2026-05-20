@@ -41,6 +41,11 @@ class ConversationListPage extends ConsumerWidget {
             onPressed: () => ref.read(conversationsProvider.notifier).load(),
             tooltip: 'Atualizar',
           ),
+          IconButton(
+            icon: const Icon(Icons.person_outline_rounded, color: AppTheme.primaryBlue),
+            onPressed: () => context.go('/profile'),
+            tooltip: 'Perfil',
+          ),
         ],
       ),
       body: _buildBody(context, ref, state),

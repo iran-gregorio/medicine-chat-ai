@@ -45,7 +45,7 @@ class ChatApiService {
   Future<ChatMessage> sendMessage(String conversationId, String message) async {
     final response = await _dio.post(
       '/chat/conversations/$conversationId/messages',
-      data: {'message': message},
+      data: {'content': message},
     );
     return ChatMessage.fromJson(response.data as Map<String, dynamic>);
   }

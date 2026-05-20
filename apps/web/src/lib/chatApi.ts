@@ -34,7 +34,7 @@ export const chatApi = {
 
   sendMessage: async (conversationId: string, message: string): Promise<ChatMessage> => {
     const response = await api.post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, {
-      message,
+      content: message,
     });
     return response.data;
   },

@@ -13,7 +13,7 @@ SYNC_DATABASE_URL = DATABASE_URL.replace("+asyncpg", "+psycopg")
 llm = ChatOpenAI(
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1",
-    model="anthropic/claude-3.5-sonnet", # Multimodal capability placeholder
+    model="google/gemini-3-flash-preview", # Multimodal capability placeholder
     temperature=0.0
 )
 

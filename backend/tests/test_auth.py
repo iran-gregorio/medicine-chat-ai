@@ -1,7 +1,9 @@
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from main import app
 from database import get_db
+from auth import get_current_user
 from unittest.mock import AsyncMock, MagicMock, patch
 
 client = TestClient(app)
@@ -180,3 +182,121 @@ async def test_reset_password():
     
     assert response.status_code == 200
     assert "sucesso" in response.json()["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_get_me_success():
+    mock_db = AsyncMock()
+    mock_user = MagicMock()
+    user_uuid = uuid.uuid4()
+    mock_user.id = user_uuid
+    mock_user.email = "test@example.com"
+    mock_user.full_name = "Test User"
+    mock_user.phone = "11999999999"
+    mock_user.is_active = True
+    
+    mock_db.execute.return_value = MockResult([mock_user])
+    
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: str(user_uuid)
+    
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer some_token"}
+    )
+    
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "test@example.com"
+    assert data["full_name"] == "Test User"
+    assert data["phone"] == "11999999999"
+    assert data["id"] == str(user_uuid)
+
+
+@pytest.mark.asyncio
+async def test_get_me_not_found():
+    mock_db = AsyncMock()
+    user_uuid = uuid.uuid4()
+    mock_db.execute.return_value = MockResult([])  # Not found
+    
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: str(user_uuid)
+    
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer some_token"}
+    )
+    
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_change_password_success():
+    mock_db = AsyncMock()
+    mock_user = MagicMock()
+    user_uuid = uuid.uuid4()
+    mock_user.id = user_uuid
+    mock_user.email = "test@example.com"
+    mock_user.hashed_password = "old_hashed_password"
+    mock_user.is_active = True
+    
+    mock_db.execute.return_value = MockResult([mock_user])
+    
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: str(user_uuid)
+    
+    with patch("routers.auth.verify_password", return_value=True), \
+         patch("routers.auth.get_password_hash", return_value="new_hashed_password"):
+         
+        response = client.post(
+            "/auth/change-password",
+            json={
+                "current_password": "OldPassword123!",
+                "new_password": "NewPassword123!"
+            },
+            headers={"Authorization": "Bearer some_token"}
+        )
+        
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    
+    assert response.status_code == 200
+    assert "senha alterada com sucesso" in response.json()["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_change_password_incorrect():
+    mock_db = AsyncMock()
+    mock_user = MagicMock()
+    user_uuid = uuid.uuid4()
+    mock_user.id = user_uuid
+    mock_user.hashed_password = "old_hashed_password"
+    mock_user.is_active = True
+    
+    mock_db.execute.return_value = MockResult([mock_user])
+    
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: str(user_uuid)
+    
+    with patch("routers.auth.verify_password", return_value=False):
+        response = client.post(
+            "/auth/change-password",
+            json={
+                "current_password": "WrongPassword123!",
+                "new_password": "NewPassword123!"
+            },
+            headers={"Authorization": "Bearer some_token"}
+        )
+        
+    app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_current_user, None)
+    
+    assert response.status_code == 400
+    assert "senha atual incorreta" in response.json()["detail"].lower()
+

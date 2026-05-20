@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 import re
+import uuid
 
 def validate_password_complexity(v: str) -> str:
     if len(v) < 8:
@@ -46,6 +47,26 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v):
+        return validate_password_complexity(v)
+
+
+class UserMeResponse(BaseModel):
+    id: uuid.UUID
+    full_name: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
     new_password: str = Field(..., min_length=8)
 
     @field_validator('new_password')

@@ -26,14 +26,17 @@ class HomePage extends StatelessWidget {
                 // Header row
                 Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
+                    GestureDetector(
+                      onTap: () => context.go('/profile'),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person, color: AppTheme.primaryBlue, size: 26),
                       ),
-                      child: const Icon(Icons.person, color: AppTheme.primaryBlue, size: 26),
                     ),
                   ],
                 ),
@@ -217,7 +220,7 @@ class _HomeBottomNav extends StatelessWidget {
           _NavItem(
             icon: Icons.person_outline_rounded,
             isActive: currentIndex == 3,
-            onTap: () {},
+            onTap: () => context.go('/profile'),
           ),
         ],
       ),

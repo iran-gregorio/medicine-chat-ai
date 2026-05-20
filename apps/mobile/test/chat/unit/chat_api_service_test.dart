@@ -147,7 +147,7 @@ void main() {
       expect(result.content, 'Olá! Como posso ajudar?');
       verify(() => mockDio.post(
             '/chat/conversations/conv-1/messages',
-            data: {'message': 'Tenho febre há 2 dias'},
+            data: {'content': 'Tenho febre há 2 dias'},
           )).called(1);
     });
 

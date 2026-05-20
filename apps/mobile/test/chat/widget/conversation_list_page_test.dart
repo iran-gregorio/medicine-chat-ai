@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:medicine_chat_mobile/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:medicine_chat_mobile/features/chat/data/chat_api_service.dart';
 import 'package:medicine_chat_mobile/features/chat/domain/chat_models.dart';
 import 'package:medicine_chat_mobile/features/chat/presentation/pages/conversation_list_page.dart';
@@ -13,6 +14,10 @@ import 'package:medicine_chat_mobile/features/chat/presentation/providers/chat_n
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 class MockChatApiService extends Mock implements ChatApiService {}
+
+class MockAuthNotifier extends StateNotifier<AuthState> with Mock implements AuthNotifier {
+  MockAuthNotifier() : super(AuthState(isAuthenticated: true));
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -33,7 +38,7 @@ List<Conversation> _buildConversations(int count) {
 
 /// Monta um ProviderScope substituindo [chatApiServiceProvider] pelo mock,
 /// e injeta [ConversationListPage] dentro de um MaterialApp para testes.
-Widget _buildWidget(MockChatApiService mockService) {
+Widget _buildWidget(MockChatApiService mockService, {MockAuthNotifier? mockAuthNotifier}) {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
@@ -45,12 +50,23 @@ Widget _buildWidget(MockChatApiService mockService) {
         path: '/chat/:conversationId',
         builder: (context, state) => const Scaffold(body: Text('Chat Page')),
       ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const Scaffold(body: Text('Login Page')),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const Scaffold(body: Text('Profile Page')),
+      ),
     ],
   );
+
+  final authNotifier = mockAuthNotifier ?? MockAuthNotifier();
 
   return ProviderScope(
     overrides: [
       chatApiServiceProvider.overrideWithValue(mockService),
+      authProvider.overrideWith((ref) => authNotifier),
     ],
     child: MaterialApp.router(
       routerConfig: router,
@@ -205,6 +221,32 @@ void main() {
 
       verify(() => mockService.createConversation(title: any(named: 'title')))
           .called(1);
+    });
+  });
+
+  group('ConversationListPage — perfil', () {
+    testWidgets('exibe o botão de Perfil na AppBar', (tester) async {
+      when(() => mockService.fetchConversations())
+          .thenAnswer((_) async => []);
+
+      await tester.pumpWidget(_buildWidget(mockService));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
+    });
+
+    testWidgets('navega para /profile ao tocar no botão de Perfil', (tester) async {
+      when(() => mockService.fetchConversations())
+          .thenAnswer((_) async => []);
+
+      await tester.pumpWidget(_buildWidget(mockService));
+      await tester.pumpAndSettle();
+
+      // Clica no botão de perfil
+      await tester.tap(find.byIcon(Icons.person_outline_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Profile Page'), findsOneWidget);
     });
   });
 }

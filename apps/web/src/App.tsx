@@ -19,7 +19,7 @@ const navItems = [
 ];
 
 function Sidebar() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const logout = useAuthStore((state) => state.logout);
   const refreshToken = useAuthStore((state) => state.refreshToken);
 
@@ -97,18 +97,6 @@ function Sidebar() {
 
       {/* Footer */}
       <div style={{ padding: '16px', borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button
-          onClick={() => i18n.changeLanguage(i18n.language === 'pt' ? 'en' : 'pt')}
-          style={{
-            width: '100%', padding: '8px 14px',
-            borderRadius: '10px', border: '1px solid #E2E8F0',
-            background: '#F8FAFC', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 500, color: '#64748B',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          }}
-        >
-          🌐 {i18n.language === 'pt' ? 'English' : 'Português'}
-        </button>
         <button
           onClick={handleLogout}
           style={{

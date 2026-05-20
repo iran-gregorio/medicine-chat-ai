@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,11 +9,12 @@ from database import get_db
 from models.user import User, UserRefreshToken, PasswordResetToken
 from schemas.auth import (
     RegisterRequest, RegisterResponse, LoginRequest, TokenResponse,
-    RefreshRequest, ForgotPasswordRequest, ResetPasswordRequest
+    RefreshRequest, ForgotPasswordRequest, ResetPasswordRequest,
+    UserMeResponse, ChangePasswordRequest
 )
 from auth import (
     create_access_token, get_password_hash, verify_password,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user
 )
 from utils.email import send_password_reset_email
 
@@ -209,3 +211,68 @@ async def reset_password(request: ResetPasswordRequest, db: AsyncSession = Depen
     await db.commit()
 
     return {"message": "Senha atualizada com sucesso"}
+
+
+@router.get("/me", response_model=UserMeResponse)
+async def get_me(
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retorna os dados do usuário autenticado atual."""
+    user_uuid = uuid.UUID(current_user)
+    query = select(User).where(User.id == user_uuid)
+    result = await db.execute(query)
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+        
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário inativo"
+        )
+        
+    return user
+
+
+@router.post("/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Altera a senha do usuário autenticado."""
+    user_uuid = uuid.UUID(current_user)
+    query = select(User).where(User.id == user_uuid)
+    result = await db.execute(query)
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+        
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário inativo"
+        )
+        
+    # Verificar se a senha atual está correta
+    if not verify_password(request.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha atual incorreta"
+        )
+        
+    # Gerar hash da nova senha e salvar
+    user.hashed_password = get_password_hash(request.new_password)
+    await db.commit()
+    
+    return {"message": "Senha alterada com sucesso"}
+

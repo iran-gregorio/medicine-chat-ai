@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Pill, Clock, TrendingUp } from 'lucide-react';
+import { ChevronRight, Pill, Clock, TrendingUp, MessageSquare } from 'lucide-react';
+import { useChatStore } from '../store/chatStore';
+import { useEffect } from 'react';
 
 const actionCards = [
   {
@@ -25,14 +27,39 @@ const actionCards = [
   },
 ];
 
-const recentItems = [
-  { icon: '💊', name: 'Paracetamol 750mg', time: 'há 2 horas', tag: 'Consultado' },
-  { icon: '💉', name: 'Amoxicilina 500mg', time: 'ontem', tag: 'Escaneado' },
-  { icon: '🩺', name: 'Ibuprofeno 400mg', time: '3 dias atrás', tag: 'Receita' },
-];
-
 export default function HomePage() {
   const navigate = useNavigate();
+  const { conversations, loadConversations, selectConversation } = useChatStore();
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  const handleSelectConversation = async (id: string) => {
+    await selectConversation(id);
+    navigate('/chat');
+  };
+
+  const formatTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMins < 1) return 'agora mesmo';
+      if (diffMins < 60) return `há ${diffMins} min`;
+      if (diffHours < 24) return `há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+      if (diffDays === 1) return 'ontem';
+      return `há ${diffDays} dias`;
+    } catch {
+      return '';
+    }
+  };
+
+  const recentConversations = conversations.slice(0, 3);
 
   return (
     <div style={{ padding: '40px 48px', maxWidth: '960px' }}>
@@ -139,36 +166,82 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Recent activity */}
+      {/* Recent conversations */}
       <div>
         <h2 style={{ margin: '0 0 16px', fontSize: '17px', fontWeight: 700, color: '#0F172A' }}>
-          Atividade Recente
+          Conversas Recentes
         </h2>
-        <div style={{ background: 'white', borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-          {recentItems.map((item, i) => (
-            <div
-              key={item.name}
+        {recentConversations.length === 0 ? (
+          <div style={{
+            background: 'white',
+            borderRadius: '20px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            padding: '30px 20px',
+            textAlign: 'center',
+            color: '#64748B',
+            fontSize: '14px',
+          }}>
+            Nenhuma conversa recente encontrada.{' '}
+            <button
+              onClick={() => navigate('/chat')}
               style={{
-                display: 'flex', alignItems: 'center', gap: '16px',
-                padding: '16px 20px',
-                borderBottom: i < recentItems.length - 1 ? '1px solid #F1F5F9' : 'none',
+                background: 'none',
+                border: 'none',
+                color: '#3B82F6',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+                textDecoration: 'underline',
               }}
             >
-              <span style={{ fontSize: '28px' }}>{item.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: '14px', color: '#0F172A' }}>{item.name}</div>
-                <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>{item.time}</div>
+              Iniciar uma conversa
+            </button>
+          </div>
+        ) : (
+          <div style={{ background: 'white', borderRadius: '20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            {recentConversations.map((item, i) => (
+              <div
+                key={item.id}
+                onClick={() => handleSelectConversation(item.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px 20px',
+                  borderBottom: i < recentConversations.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#F8FAFC';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '12px',
+                  background: 'rgba(59,130,246,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#3B82F6',
+                }}>
+                  <MessageSquare size={20} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '14px', color: '#0F172A' }}>{item.title}</div>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
+                    {formatTime(item.updated_at)}
+                  </div>
+                </div>
+                <ChevronRight size={18} color="#94A3B8" />
               </div>
-              <span style={{
-                padding: '4px 12px', borderRadius: '20px',
-                fontSize: '12px', fontWeight: 500,
-                background: '#EFF6FF', color: '#3B82F6',
-              }}>
-                {item.tag}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
