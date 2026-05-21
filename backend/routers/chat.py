@@ -17,6 +17,9 @@ from schemas.chat import (
 from services.chat_history import PostgresChatHistory
 from llm_config import get_llm, get_vectorstore
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from config.agent_prompt import SYSTEM_PROMPT
+from services.guardrails import GuardrailService
+
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -111,6 +114,17 @@ async def send_message(
 
     history_service = PostgresChatHistory(db)
 
+    # 1.5. Executar Guardrail de Entrada
+    guardrail_res = await GuardrailService.check_input_scope(request.content)
+    if not guardrail_res["inside_scope"]:
+        rejection_msg = guardrail_res["rejection_reason"]
+        # Gravar turno do usuário e resposta educada no histórico
+        await history_service.add_message(conversation_id=id, role="user", content=request.content)
+        assistant_msg = await history_service.add_message(
+            conversation_id=id, role="assistant", content=rejection_msg
+        )
+        return assistant_msg
+
     # 2. Busca Vetorial de Contexto (RAG) no pgvector
     rag_context = ""
     try:
@@ -130,10 +144,7 @@ async def send_message(
     messages_for_llm = []
 
     # System Message (com RAG e Resumo de histórico se houver)
-    system_content = (
-        "Você é um assistente médico especialista e empático. Seu papel é explicar bulas e receitas médicas "
-        "de forma simples, segura, acessível e sempre recomendando consultar um profissional em caso de dúvidas críticas.\n"
-    )
+    system_content = SYSTEM_PROMPT
     
     if conversation.summary:
         system_content += f"\nResumo consolidado do histórico médico anterior:\n{conversation.summary}\n"
