@@ -11,6 +11,7 @@ from models.chat import Conversation
 from schemas.chat import (
     ConversationCreate,
     ConversationResponse,
+    ConversationUpdate,
     MessageCreate,
     MessageResponse,
 )
@@ -43,6 +44,7 @@ async def create_conversation(
 
 @router.get("/conversations", response_model=List[ConversationResponse])
 async def list_conversations(
+    archived: bool = False,
     current_user: str = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -50,12 +52,44 @@ async def list_conversations(
     user_uuid = uuid.UUID(current_user)
     query = (
         select(Conversation)
-        .where(Conversation.user_id == user_uuid)
+        .where(Conversation.user_id == user_uuid, Conversation.is_archived == archived)
         .order_by(Conversation.updated_at.desc())
     )
     result = await db.execute(query)
     conversations = result.scalars().all()
     return conversations
+
+
+@router.patch("/conversations/{id}", response_model=ConversationResponse)
+async def update_conversation(
+    id: uuid.UUID,
+    request: ConversationUpdate,
+    current_user: str = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Atualiza metadados (como título ou status de arquivamento) de uma conversa."""
+    user_uuid = uuid.UUID(current_user)
+    
+    query = select(Conversation).where(
+        Conversation.id == id, Conversation.user_id == user_uuid
+    )
+    result = await db.execute(query)
+    conversation = result.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversa não encontrada ou acesso não autorizado.",
+        )
+        
+    if request.title is not None:
+        conversation.title = request.title
+    if request.is_archived is not None:
+        conversation.is_archived = request.is_archived
+        
+    await db.commit()
+    await db.refresh(conversation)
+    return conversation
 
 
 @router.get("/conversations/{id}/messages", response_model=List[MessageResponse])

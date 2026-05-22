@@ -28,6 +28,7 @@ final _convJson = {
   'id': 'conv-1',
   'title': 'Bula do Paracetamol',
   'summary': null,
+  'is_archived': false,
   'created_at': _now.toIso8601String(),
   'updated_at': _now.toIso8601String(),
 };
@@ -57,7 +58,7 @@ void main() {
 
   group('ChatApiService.fetchConversations', () {
     test('retorna lista de Conversation quando o servidor responde 200', () async {
-      when(() => mockDio.get(any())).thenAnswer(
+      when(() => mockDio.get(any(), queryParameters: any(named: 'queryParameters'))).thenAnswer(
         (_) async => _fakeResponse([_convJson]),
       );
 
@@ -66,11 +67,11 @@ void main() {
       expect(result, hasLength(1));
       expect(result.first.id, 'conv-1');
       expect(result.first.title, 'Bula do Paracetamol');
-      verify(() => mockDio.get('/chat/conversations')).called(1);
+      verify(() => mockDio.get('/chat/conversations', queryParameters: {})).called(1);
     });
 
     test('retorna lista vazia quando o servidor responde com []', () async {
-      when(() => mockDio.get(any())).thenAnswer(
+      when(() => mockDio.get(any(), queryParameters: any(named: 'queryParameters'))).thenAnswer(
         (_) async => _fakeResponse(<dynamic>[]),
       );
 
@@ -80,7 +81,7 @@ void main() {
     });
 
     test('propaga DioException quando o servidor retorna erro', () async {
-      when(() => mockDio.get(any())).thenThrow(
+      when(() => mockDio.get(any(), queryParameters: any(named: 'queryParameters'))).thenThrow(
         DioException(
           requestOptions: RequestOptions(path: '/chat/conversations'),
           response: _fakeResponse({'detail': 'Unauthorized'}, statusCode: 401),
@@ -192,6 +193,7 @@ void main() {
       expect(conv.id, 'conv-1');
       expect(conv.title, 'Bula do Paracetamol');
       expect(conv.summary, isNull);
+      expect(conv.isArchived, isFalse);
       expect(conv.createdAt, isA<DateTime>());
     });
   });

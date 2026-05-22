@@ -4,6 +4,7 @@ import type { Conversation, ChatMessage } from '../lib/chatApi';
 
 interface ChatState {
   conversations: Conversation[];
+  archivedConversations: Conversation[];
   activeConversationId: string | null;
   messages: ChatMessage[];
   isLoadingConversations: boolean;
@@ -12,14 +13,17 @@ interface ChatState {
   error: string | null;
   
   loadConversations: () => Promise<void>;
+  loadArchivedConversations: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
   createConversation: (title?: string) => Promise<string | null>;
   sendMessage: (text: string) => Promise<void>;
+  updateConversationDetails: (id: string, updates: { title?: string; is_archived?: boolean }) => Promise<void>;
   clearError: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
   conversations: [],
+  archivedConversations: [],
   activeConversationId: null,
   messages: [],
   isLoadingConversations: false,
@@ -41,6 +45,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err.response?.data?.detail || 'Erro ao carregar conversas', 
         isLoadingConversations: false 
       });
+    }
+  },
+
+  loadArchivedConversations: async () => {
+    try {
+      const convs = await chatApi.fetchConversations(true);
+      const sorted = [...convs].sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+      set({ archivedConversations: sorted });
+    } catch (err: any) {
+      console.error('Erro ao carregar conversas arquivadas', err);
     }
   },
 
@@ -133,6 +149,47 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err.response?.data?.detail || 'Falha ao enviar mensagem. Verifique sua conexão.',
         isSending: false,
       }));
+    }
+  },
+
+  updateConversationDetails: async (id: string, updates: { title?: string; is_archived?: boolean }) => {
+    try {
+      const updated = await chatApi.updateConversation(id, updates);
+      
+      set((state) => {
+        let newConversations = [...state.conversations];
+        let newArchived = [...state.archivedConversations];
+        
+        // Remove from both lists first
+        newConversations = newConversations.filter(c => c.id !== id);
+        newArchived = newArchived.filter(c => c.id !== id);
+        
+        // Add to the correct list
+        if (updated.is_archived) {
+          newArchived.push(updated);
+        } else {
+          newConversations.push(updated);
+        }
+        
+        // Re-sort
+        newConversations.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        newArchived.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        
+        // If archived active conversation, unselect it
+        let activeId = state.activeConversationId;
+        if (id === activeId && updated.is_archived) {
+            activeId = null;
+        }
+
+        return {
+          conversations: newConversations,
+          archivedConversations: newArchived,
+          activeConversationId: activeId,
+          ...(activeId === null ? { messages: [] } : {})
+        };
+      });
+    } catch (err: any) {
+      set({ error: err.response?.data?.detail || 'Erro ao atualizar conversa' });
     }
   },
 

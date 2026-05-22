@@ -1,22 +1,35 @@
-import React from 'react';
-import { Plus, MessageSquare, Bot } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, MessageSquare, Bot, MoreVertical, Edit2, Archive, ArchiveRestore, Check, X } from 'lucide-react';
 import type { Conversation } from '../../lib/chatApi';
 
 interface ConversationListProps {
   conversations: Conversation[];
+  archivedConversations: Conversation[];
   activeId: string | null;
   isLoading: boolean;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onRename: (id: string, newTitle: string) => void;
+  onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
+  archivedConversations,
   activeId,
   isLoading,
   onSelect,
   onCreate,
+  onRename,
+  onArchive,
+  onUnarchive,
 }) => {
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
@@ -30,6 +43,33 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       return '';
     }
   };
+
+  const handleStartRename = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingId(conv.id);
+    setEditTitle(conv.title);
+    setMenuOpenId(null);
+  };
+
+  const handleConfirmRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (renamingId && editTitle.trim()) {
+      onRename(renamingId, editTitle.trim());
+    }
+    setRenamingId(null);
+  };
+
+  const handleCancelRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingId(null);
+  };
+
+  const toggleMenu = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpenId(menuOpenId === id ? null : id);
+  };
+
+  const currentList = activeTab === 'active' ? conversations : archivedConversations;
 
   return (
     <div
@@ -83,6 +123,44 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           <Plus size={18} />
           Nova Conversa
         </button>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', marginTop: '16px', gap: '8px' }}>
+          <button
+            onClick={() => setActiveTab('active')}
+            style={{
+              flex: 1,
+              padding: '6px 0',
+              border: 'none',
+              background: activeTab === 'active' ? '#EFF6FF' : 'transparent',
+              color: activeTab === 'active' ? '#3B82F6' : '#64748B',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            Ativas
+          </button>
+          <button
+            onClick={() => setActiveTab('archived')}
+            style={{
+              flex: 1,
+              padding: '6px 0',
+              border: 'none',
+              background: activeTab === 'archived' ? '#EFF6FF' : 'transparent',
+              color: activeTab === 'archived' ? '#3B82F6' : '#64748B',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            Arquivadas
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -95,8 +173,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           flexDirection: 'column',
           gap: '4px',
         }}
+        onClick={() => setMenuOpenId(null)}
       >
-        {isLoading && conversations.length === 0 ? (
+        {isLoading && currentList.length === 0 ? (
           <div
             style={{
               display: 'flex',
@@ -120,7 +199,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             />
             <span style={{ fontSize: '13px' }}>Carregando conversas...</span>
           </div>
-        ) : conversations.length === 0 ? (
+        ) : currentList.length === 0 ? (
           <div
             style={{
               padding: '40px 16px',
@@ -134,15 +213,20 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             }}
           >
             <MessageSquare size={24} style={{ opacity: 0.6 }} />
-            <span>Nenhuma conversa ainda.</span>
+            <span>Nenhuma conversa {activeTab === 'active' ? 'ainda' : 'arquivada'}.</span>
           </div>
         ) : (
-          conversations.map((conv) => {
+          currentList.map((conv) => {
             const isActive = conv.id === activeId;
+            const isRenaming = conv.id === renamingId;
+            const isMenuOpen = conv.id === menuOpenId;
+
             return (
               <div
                 key={conv.id}
-                onClick={() => onSelect(conv.id)}
+                onClick={() => {
+                  if (!isRenaming) onSelect(conv.id);
+                }}
                 style={{
                   padding: '12px',
                   borderRadius: '12px',
@@ -153,6 +237,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   gap: '10px',
                   borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
                   transition: 'all 0.15s',
+                  position: 'relative'
                 }}
                 onMouseOver={(e) => {
                   if (!isActive) e.currentTarget.style.background = '#F8FAFC';
@@ -176,20 +261,57 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 >
                   {isActive ? <Bot size={18} /> : <MessageSquare size={18} />}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: isActive ? 600 : 500,
-                      fontSize: '14px',
-                      color: isActive ? '#1E3A8A' : '#334155',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {conv.title}
-                  </div>
-                  {conv.summary && (
+                <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+                  {isRenaming ? (
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          flex: 1,
+                          fontSize: '13px',
+                          padding: '2px 4px',
+                          border: '1px solid #3B82F6',
+                          borderRadius: '4px',
+                          outline: 'none',
+                          width: '100%',
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleConfirmRename(e as any);
+                          if (e.key === 'Escape') handleCancelRename(e as any);
+                        }}
+                      />
+                      <button
+                        onClick={handleConfirmRename}
+                        style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', padding: '2px' }}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={handleCancelRename}
+                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '2px' }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        fontWeight: isActive ? 600 : 500,
+                        fontSize: '14px',
+                        color: isActive ? '#1E3A8A' : '#334155',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        paddingRight: '20px'
+                      }}
+                    >
+                      {conv.title}
+                    </div>
+                  )}
+                  {!isRenaming && conv.summary && (
                     <div
                       style={{
                         fontSize: '11px',
@@ -198,20 +320,142 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         marginTop: '2px',
+                        paddingRight: '20px'
                       }}
                     >
                       {conv.summary}
                     </div>
                   )}
-                  <div
-                    style={{
-                      fontSize: '10px',
-                      color: isActive ? '#60A5FA' : '#94A3B8',
-                      marginTop: '4px',
-                    }}
-                  >
-                    {formatDate(conv.updated_at)}
-                  </div>
+                  {!isRenaming && (
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        color: isActive ? '#60A5FA' : '#94A3B8',
+                        marginTop: '4px',
+                      }}
+                    >
+                      {formatDate(conv.updated_at)}
+                    </div>
+                  )}
+
+                  {/* Actions Menu Toggle */}
+                  {!isRenaming && (
+                    <button
+                      onClick={(e) => toggleMenu(conv.id, e)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        background: 'none',
+                        border: 'none',
+                        color: '#94A3B8',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        opacity: isMenuOpen ? 1 : 0.5,
+                      }}
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                  )}
+
+                  {/* Actions Dropdown */}
+                  {isMenuOpen && !isRenaming && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '20px',
+                        right: 0,
+                        background: 'white',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        padding: '4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minWidth: '120px',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {activeTab === 'active' && (
+                        <button
+                          onClick={(e) => handleStartRename(conv, e)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'none',
+                            border: 'none',
+                            padding: '8px',
+                            fontSize: '12px',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: '4px',
+                            width: '100%'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          <Edit2 size={14} /> Renomear
+                        </button>
+                      )}
+                      
+                      {activeTab === 'active' ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpenId(null);
+                            onArchive(conv.id);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'none',
+                            border: 'none',
+                            padding: '8px',
+                            fontSize: '12px',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: '4px',
+                            width: '100%'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          <Archive size={14} /> Arquivar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpenId(null);
+                            onUnarchive(conv.id);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: 'none',
+                            border: 'none',
+                            padding: '8px',
+                            fontSize: '12px',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            borderRadius: '4px',
+                            width: '100%'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                        >
+                          <ArchiveRestore size={14} /> Desarquivar
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

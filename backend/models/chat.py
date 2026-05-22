@@ -1,8 +1,10 @@
 import uuid
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -18,6 +20,9 @@ class Conversation(Base):
     """Sessão de conversa de chat de um usuário."""
 
     __tablename__ = "conversations"
+    __table_args__ = (
+        Index("ix_conversations_user_id_is_archived", "user_id", "is_archived"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
@@ -26,6 +31,7 @@ class Conversation(Base):
         nullable=False,
         index=True,
     )
+    is_archived = Column(Boolean, default=False, nullable=False, server_default="false")
     title = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

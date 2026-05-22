@@ -9,12 +9,19 @@ class ConversationCreate(BaseModel):
     title: Optional[str] = None
 
 
+class ConversationUpdate(BaseModel):
+    """Corpo da requisição para atualizar uma conversa existente."""
+    title: Optional[str] = None
+    is_archived: Optional[bool] = None
+
+
 class ConversationResponse(BaseModel):
     """Dados de resposta de uma conversa."""
     id: uuid.UUID
     user_id: uuid.UUID
     title: Optional[str]
     summary: Optional[str]
+    is_archived: bool
     created_at: datetime
     updated_at: datetime
 

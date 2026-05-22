@@ -9,22 +9,26 @@ import '../../domain/chat_models.dart';
 
 class ConversationsState {
   final List<Conversation> conversations;
+  final List<Conversation> archivedConversations;
   final bool isLoading;
   final String? error;
 
   const ConversationsState({
     this.conversations = const [],
+    this.archivedConversations = const [],
     this.isLoading = false,
     this.error,
   });
 
   ConversationsState copyWith({
     List<Conversation>? conversations,
+    List<Conversation>? archivedConversations,
     bool? isLoading,
     String? error,
   }) {
     return ConversationsState(
       conversations: conversations ?? this.conversations,
+      archivedConversations: archivedConversations ?? this.archivedConversations,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -47,7 +51,12 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final list = await _api.fetchConversations();
-      state = state.copyWith(conversations: list, isLoading: false);
+      final archivedList = await _api.fetchConversations(archived: true);
+      state = state.copyWith(
+        conversations: list,
+        archivedConversations: archivedList,
+        isLoading: false,
+      );
     } on DioException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -72,6 +81,31 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
             'Erro ao criar conversa',
       );
       return null;
+    }
+  }
+
+  Future<void> updateConversation(String id, {String? title, bool? isArchived}) async {
+    try {
+      final updated = await _api.updateConversation(id, title: title, isArchived: isArchived);
+      
+      final allConvs = [...state.conversations, ...state.archivedConversations];
+      final others = allConvs.where((c) => c.id != id).toList();
+      others.add(updated);
+      
+      final active = others.where((c) => !c.isArchived).toList();
+      final archived = others.where((c) => c.isArchived).toList();
+      
+      active.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      archived.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      
+      state = state.copyWith(conversations: active, archivedConversations: archived);
+    } on DioException catch (e) {
+      state = state.copyWith(
+        error: e.response?.data?['detail']?.toString() ??
+            'Erro ao atualizar conversa',
+      );
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
     }
   }
 }

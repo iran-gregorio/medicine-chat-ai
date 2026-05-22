@@ -4,6 +4,7 @@ export interface Conversation {
   id: string;
   title: string;
   summary: string | null;
+  is_archived: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -17,8 +18,16 @@ export interface ChatMessage {
 }
 
 export const chatApi = {
-  fetchConversations: async (): Promise<Conversation[]> => {
-    const response = await api.get<Conversation[]>('/chat/conversations');
+  fetchConversations: async (archived = false): Promise<Conversation[]> => {
+    const response = await api.get<Conversation[]>('/chat/conversations', { params: { archived } });
+    return response.data;
+  },
+
+  updateConversation: async (
+    conversationId: string,
+    updates: { title?: string; is_archived?: boolean }
+  ): Promise<Conversation> => {
+    const response = await api.patch<Conversation>(`/chat/conversations/${conversationId}`, updates);
     return response.data;
   },
 

@@ -15,12 +15,31 @@ class ChatApiService {
   ChatApiService(this._dio);
 
   /// Busca a lista de conversas do usuário autenticado.
-  Future<List<Conversation>> fetchConversations() async {
-    final response = await _dio.get('/chat/conversations');
+  Future<List<Conversation>> fetchConversations({bool archived = false}) async {
+    final response = await _dio.get('/chat/conversations', queryParameters: {
+      if (archived) 'archived': true,
+    });
     final List<dynamic> data = response.data as List<dynamic>;
     return data
         .map((json) => Conversation.fromJson(json as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Atualiza o título ou o status de arquivamento de uma conversa.
+  Future<Conversation> updateConversation(
+    String conversationId, {
+    String? title,
+    bool? isArchived,
+  }) async {
+    final Map<String, dynamic> data = {};
+    if (title != null) data['title'] = title;
+    if (isArchived != null) data['is_archived'] = isArchived;
+
+    final response = await _dio.patch(
+      '/chat/conversations/$conversationId',
+      data: data,
+    );
+    return Conversation.fromJson(response.data as Map<String, dynamic>);
   }
 
   /// Cria uma nova conversa com o título fornecido.

@@ -6,11 +6,30 @@ import '../../../../core/theme/app_theme.dart';
 import '../providers/chat_notifier.dart';
 import '../../domain/chat_models.dart';
 
-class ConversationListPage extends ConsumerWidget {
+class ConversationListPage extends ConsumerStatefulWidget {
   const ConversationListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConversationListPage> createState() => _ConversationListPageState();
+}
+
+class _ConversationListPageState extends ConsumerState<ConversationListPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(conversationsProvider);
 
     return Scaffold(
@@ -35,6 +54,16 @@ class ConversationListPage extends ConsumerWidget {
             color: AppTheme.textDark,
           ),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppTheme.primaryBlue,
+          unselectedLabelColor: AppTheme.textGrey,
+          indicatorColor: AppTheme.primaryBlue,
+          tabs: const [
+            Tab(text: 'Ativas'),
+            Tab(text: 'Arquivadas'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: AppTheme.textGrey),
@@ -48,7 +77,13 @@ class ConversationListPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: _buildBody(context, ref, state),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildList(context, ref, state, state.conversations, false),
+          _buildList(context, ref, state, state.archivedConversations, true),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _createNewConversation(context, ref),
         backgroundColor: AppTheme.primaryBlue,
@@ -64,23 +99,21 @@ class ConversationListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildBody(
-      BuildContext context, WidgetRef ref, ConversationsState state) {
-    if (state.isLoading) {
+  Widget _buildList(BuildContext context, WidgetRef ref, ConversationsState state, List<Conversation> items, bool isArchivedTab) {
+    if (state.isLoading && items.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.primaryBlue),
       );
     }
 
-    if (state.error != null) {
+    if (state.error != null && items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.cloud_off_rounded,
-                  size: 64, color: AppTheme.textGrey),
+              const Icon(Icons.cloud_off_rounded, size: 64, color: AppTheme.textGrey),
               const SizedBox(height: 16),
               Text(
                 state.error!,
@@ -89,8 +122,7 @@ class ConversationListPage extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () =>
-                    ref.read(conversationsProvider.notifier).load(),
+                onPressed: () => ref.read(conversationsProvider.notifier).load(),
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Tentar novamente'),
                 style: ElevatedButton.styleFrom(
@@ -104,7 +136,7 @@ class ConversationListPage extends ConsumerWidget {
       );
     }
 
-    if (state.conversations.isEmpty) {
+    if (items.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -129,23 +161,16 @@ class ConversationListPage extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.smart_toy_rounded,
-                    color: Colors.white, size: 48),
+                child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 48),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Nenhuma conversa ainda',
-                style: TextStyle(
+              Text(
+                isArchivedTab ? 'Nenhuma conversa arquivada' : 'Nenhuma conversa ainda',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textDark,
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Crie uma nova conversa e comece a\ntira suas dúvidas com o MediCare AI.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppTheme.textGrey),
               ),
             ],
           ),
@@ -158,22 +183,22 @@ class ConversationListPage extends ConsumerWidget {
       color: AppTheme.primaryBlue,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        itemCount: state.conversations.length,
+        itemCount: items.length,
         itemBuilder: (context, index) {
-          final conv = state.conversations[index];
+          final conv = items[index];
           return _ConversationCard(
             conversation: conv,
             onTap: () => context.go('/chat/${conv.id}'),
+            onRename: (newTitle) => ref.read(conversationsProvider.notifier).updateConversation(conv.id, title: newTitle),
+            onToggleArchive: () => ref.read(conversationsProvider.notifier).updateConversation(conv.id, isArchived: !conv.isArchived),
           );
         },
       ),
     );
   }
 
-  Future<void> _createNewConversation(
-      BuildContext context, WidgetRef ref) async {
-    final conv =
-        await ref.read(conversationsProvider.notifier).create();
+  Future<void> _createNewConversation(BuildContext context, WidgetRef ref) async {
+    final conv = await ref.read(conversationsProvider.notifier).create();
     if (conv != null && context.mounted) {
       context.go('/chat/${conv.id}');
     }
@@ -183,11 +208,47 @@ class ConversationListPage extends ConsumerWidget {
 class _ConversationCard extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
+  final Function(String) onRename;
+  final VoidCallback onToggleArchive;
 
   const _ConversationCard({
     required this.conversation,
     required this.onTap,
+    required this.onRename,
+    required this.onToggleArchive,
   });
+
+  Future<void> _showRenameDialog(BuildContext context) async {
+    final controller = TextEditingController(text: conversation.title);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Renomear Conversa'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'Novo título'),
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.trim().isNotEmpty && result.trim() != conversation.title) {
+      onRename(result.trim());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,8 +284,7 @@ class _ConversationCard extends StatelessWidget {
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.chat_bubble_outline_rounded,
-                    color: Colors.white, size: 22),
+                child: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -241,13 +301,11 @@ class _ConversationCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (conversation.summary != null &&
-                        conversation.summary!.isNotEmpty) ...[
+                    if (conversation.summary != null && conversation.summary!.isNotEmpty) ...[
                       const SizedBox(height: 3),
                       Text(
                         conversation.summary!,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppTheme.textGrey),
+                        style: const TextStyle(fontSize: 12, color: AppTheme.textGrey),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -255,14 +313,44 @@ class _ConversationCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       dateFormatter.format(conversation.updatedAt.toLocal()),
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.textGrey),
+                      style: const TextStyle(fontSize: 11, color: AppTheme.textGrey),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppTheme.textGrey, size: 22),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: AppTheme.textGrey),
+                onSelected: (value) {
+                  if (value == 'rename') {
+                    _showRenameDialog(context);
+                  } else if (value == 'archive_toggle') {
+                    onToggleArchive();
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (!conversation.isArchived)
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20, color: AppTheme.textDark),
+                          SizedBox(width: 8),
+                          Text('Renomear'),
+                        ],
+                      ),
+                    ),
+                  PopupMenuItem(
+                    value: 'archive_toggle',
+                    child: Row(
+                      children: [
+                        Icon(conversation.isArchived ? Icons.unarchive : Icons.archive, size: 20, color: AppTheme.textDark),
+                        SizedBox(width: 8),
+                        Text(conversation.isArchived ? 'Desarquivar' : 'Arquivar'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
