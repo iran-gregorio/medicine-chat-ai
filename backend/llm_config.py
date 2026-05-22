@@ -1,7 +1,12 @@
 import os
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_postgres.vectorstores import PGVector
 from sqlalchemy.ext.asyncio import create_async_engine
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "dummy")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://medicine_user:medicine_password@localhost:5432/medicine_chat")
@@ -16,11 +21,15 @@ llm = ChatOpenAI(
     model="google/gemini-3-flash-preview", # Multimodal capability placeholder
     temperature=0.0
 )
+_embeddings = None
 
-embeddings = OpenAIEmbeddings(
-    api_key=os.getenv("OPENAI_API_KEY", "dummy"), # Em uma implementação real, usaríamos embeddings do próprio provedor ou OpenAI real
-    model="text-embedding-3-small"
-)
+def get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="google/embeddinggemma-300m"
+        )
+    return _embeddings
 
 # Setup PGVector for RAG
 engine = create_async_engine(DATABASE_URL)
@@ -32,7 +41,7 @@ async def get_vectorstore():
     global _vectorstore
     if _vectorstore is None:
         _vectorstore = PGVector(
-            embeddings=embeddings,
+            embeddings=get_embeddings(),
             collection_name="anvisa_medicines",
             connection=SYNC_DATABASE_URL,
             use_jsonb=True,

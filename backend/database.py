@@ -1,6 +1,10 @@
 import os
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
 
 # The database URL can be provided by environment variables
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://medicine_user:medicine_password@localhost:5432/medicine_chat")

@@ -1,45 +1,133 @@
 import asyncio
 import os
-import csv
+import argparse
+import glob
 from uuid import uuid4
+from dotenv import load_dotenv
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pypdf import PdfReader
+from sqlalchemy import text
 
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
 from llm_config import get_vectorstore
 
-async def sync_anvisa_data():
+
+async def clear_existing_pdf_embeddings(filename: str, vectorstore):
     """
-    Simula o download e processamento de um CSV da ANVISA e armazena no PostgreSQL via pgvector.
-    Em um cenário real, isso faria requisições HTTP para os dados abertos da ANVISA.
+    Remove do banco todos os embeddings antigos correspondentes a um determinado arquivo PDF
+    para evitar duplicações e desperdício de embeddings.
     """
-    print("Iniciando rotina de ingestão de dados da ANVISA...")
-    
-    # Simulação de dados parseados do CSV
-    dummy_csv_data = [
-        {"registro": "100290002", "nome": "Paracetamol 750mg", "principio_ativo": "Paracetamol", "indicacao": "Febre e dores leves"},
-        {"registro": "100290003", "nome": "Dipirona 500mg", "principio_ativo": "Dipirona Sódica", "indicacao": "Febre e dores agudas"},
-        {"registro": "100290004", "nome": "Ibuprofeno 400mg", "principio_ativo": "Ibuprofeno", "indicacao": "Inflamações e febre"}
-    ]
-    
+    engine = vectorstore._engine
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "DELETE FROM langchain_pg_embedding "
+                "WHERE cmetadata ->> 'filename' = :filename "
+                "AND cmetadata ->> 'source' = 'local_pdf'"
+            ),
+            {"filename": filename}
+        )
+
+
+async def process_local_pdfs(dir_path: str):
+    """
+    Lê, valida e vetoriza todos os arquivos PDF em um diretório local.
+    """
+    if not os.path.exists(dir_path):
+        print(f"Erro: O diretório '{dir_path}' não existe.")
+        return
+        
+    if not os.path.isdir(dir_path):
+        print(f"Erro: O caminho '{dir_path}' não é um diretório.")
+        return
+
+    # Busca arquivos .pdf no diretório (case-insensitive)
+    pdf_pattern = os.path.join(dir_path, "*")
+    all_files = glob.glob(pdf_pattern)
+    pdf_files = [f for f in all_files if f.lower().endswith(".pdf")]
+
+    if not pdf_files:
+        print(f"Aviso: Nenhum arquivo PDF encontrado no diretório '{dir_path}'.")
+        return
+
+    print(f"Encontrados {len(pdf_files)} arquivos PDF para processamento.")
     vectorstore = await get_vectorstore()
     
-    documents = []
-    for item in dummy_csv_data:
-        # Prepara o conteúdo textual para o Embedding
-        page_content = f"Nome: {item['nome']}\nPrincípio Ativo: {item['principio_ativo']}\nIndicação: {item['indicacao']}"
-        
-        doc = Document(
-            page_content=page_content,
-            metadata={"registro_anvisa": item["registro"], "source": "anvisa_csv"}
-        )
-        documents.append(doc)
+    # Configura o splitter de texto
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     
-    print(f"Gerando embeddings e inserindo {len(documents)} documentos...")
-    # langchains PGVector .add_documents is sync
-    vectorstore.add_documents(documents)
-    print("Sincronização concluída com sucesso!")
+    for pdf_path in pdf_files:
+        filename = os.path.basename(pdf_path)
+        print(f"\nProcessando arquivo: {filename}...")
+        
+        try:
+            reader = PdfReader(pdf_path)
+            documents = []
+            total_text_length = 0
+            
+            for page_idx, page in enumerate(reader.pages):
+                page_num = page_idx + 1
+                page_text = page.extract_text() or ""
+                page_text_stripped = page_text.strip()
+                
+                if not page_text_stripped:
+                    print(f"  [Aviso] Página {page_num} do arquivo '{filename}' está vazia ou é imagem (sem texto extraível).")
+                    continue
+                
+                total_text_length += len(page_text_stripped)
+                
+                # Split do texto da página
+                chunks = splitter.split_text(page_text_stripped)
+                for chunk in chunks:
+                    doc = Document(
+                        page_content=chunk,
+                        metadata={
+                            "source": "local_pdf",
+                            "filename": filename,
+                            "page": page_num
+                        }
+                    )
+                    documents.append(doc)
+            
+            if total_text_length == 0:
+                print(f"  [Aviso] O arquivo '{filename}' parece estar vazio ou escaneado (sem texto extraível). Pulando gravação de embeddings.")
+                continue
+
+            if not documents:
+                print(f"  [Aviso] Nenhum texto útil pôde ser extraído e fragmentado de '{filename}'.")
+                continue
+
+            print(f"  -> Removendo embeddings antigos para '{filename}' para evitar duplicação...")
+            await clear_existing_pdf_embeddings(filename, vectorstore)
+            
+            print(f"  -> Gerando embeddings e inserindo {len(documents)} blocos de texto...")
+            vectorstore.add_documents(documents)
+            print(f"  ✓ Processamento e indexação de '{filename}' concluídos com sucesso!")
+            
+        except Exception as e:
+            print(f"  [Erro] Falha ao processar o arquivo '{filename}': {str(e)}")
+
+
+async def main():
+    parser = argparse.ArgumentParser(
+        description="CLI para ingestão de PDFs locais no PGVector RAG."
+    )
+    parser.add_argument(
+        "--pdf-dir",
+        type=str,
+        required=True,
+        help="Caminho do diretório local contendo arquivos PDF para ingestão de embeddings."
+    )
+    
+    args = parser.parse_args()
+    await process_local_pdfs(args.pdf_dir)
+
 
 if __name__ == "__main__":
-    asyncio.run(sync_anvisa_data())
+    asyncio.run(main())

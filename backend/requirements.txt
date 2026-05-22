@@ -6,6 +6,7 @@ uvicorn[standard]>=0.32.0
 pydantic>=2.10.0
 pydantic-settings>=2.7.0
 email-validator>=2.2.0
+python-dotenv>=1.0.0
 
 # Database — SQLAlchemy async (greenlet required for async engine)
 sqlalchemy>=2.0.36
@@ -30,6 +31,10 @@ python-multipart>=0.0.19
 langchain>=0.3.1
 langchain-openai>=0.2.1
 langchain-postgres>=0.0.12
+langchain-text-splitters>=0.3.0
+pypdf>=5.0.0
+langchain-huggingface>=0.1.0
+sentence-transformers>=3.0.0
 
 # Testing
 pytest>=8.3.4
