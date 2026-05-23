@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/chat_models.dart';
@@ -67,5 +68,27 @@ class ChatApiService {
       data: {'content': message},
     );
     return ChatMessage.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Envia uma mensagem para uma conversa e escuta a stream de texto via SSE.
+  Future<void> sendMessageStream(
+    String conversationId,
+    String message,
+    void Function(String) onChunk,
+  ) async {
+    final response = await _dio.post(
+      '/chat/conversations/$conversationId/messages',
+      data: {'content': message},
+      options: Options(responseType: ResponseType.stream),
+    );
+
+    final responseBody = response.data as ResponseBody;
+    final stream = responseBody.stream;
+
+    await for (final text in stream.cast<List<int>>().transform(utf8.decoder)) {
+      if (text.isNotEmpty) {
+        onChunk(text);
+      }
+    }
   }
 }

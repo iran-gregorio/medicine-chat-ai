@@ -41,10 +41,43 @@ export const chatApi = {
     return response.data;
   },
 
-  sendMessage: async (conversationId: string, message: string): Promise<ChatMessage> => {
-    const response = await api.post<ChatMessage>(`/chat/conversations/${conversationId}/messages`, {
-      content: message,
+  sendMessageStream: async (
+    conversationId: string, 
+    message: string,
+    onChunk: (chunk: string) => void
+  ): Promise<void> => {
+    // Pegando o token diretamente do store
+    const { useAuthStore } = await import('../store/authStore');
+    const token = useAuthStore.getState().token;
+    const { API_URL } = await import('./api');
+    
+    const response = await fetch(`${API_URL}/chat/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ content: message })
     });
-    return response.data;
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${await response.text()}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      if (chunk) {
+        onChunk(chunk);
+      }
+    }
   },
 };

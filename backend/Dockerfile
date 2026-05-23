@@ -4,12 +4,12 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get purge -y --auto-remove gcc \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

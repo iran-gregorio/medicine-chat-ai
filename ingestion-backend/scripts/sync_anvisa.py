@@ -15,7 +15,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-from llm_config import get_vectorstore
+from db import get_vectorstore
+import re
+
+def redact_pii(text: str) -> str:
+    """Removes sensitive PII like CPF, Emails, and Phone numbers from text."""
+    # Redact CPF (XXX.XXX.XXX-XX or XXXXXXXXXXX)
+    text = re.sub(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', '[CPF REMOVED]', text)
+    text = re.sub(r'\b\d{11}\b', '[CPF REMOVED]', text)
+    # Redact Email
+    text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', '[EMAIL REMOVED]', text)
+    # Redact Phone (e.g. (XX) XXXXX-XXXX)
+    text = re.sub(r'\(\d{2}\)\s*\d{4,5}-\d{4}', '[PHONE REMOVED]', text)
+    return text
 
 
 async def clear_existing_pdf_embeddings(filename: str, vectorstore):
@@ -75,6 +87,7 @@ async def process_local_pdfs(dir_path: str):
                 page_num = page_idx + 1
                 page_text = page.extract_text() or ""
                 page_text_stripped = page_text.strip()
+                page_text_stripped = redact_pii(page_text_stripped)
                 
                 if not page_text_stripped:
                     print(f"  [Aviso] Página {page_num} do arquivo '{filename}' está vazia ou é imagem (sem texto extraível).")

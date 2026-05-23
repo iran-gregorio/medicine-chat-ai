@@ -3,6 +3,14 @@ import 'package:dio/dio.dart';
 import '../../data/chat_api_service.dart';
 import '../../domain/chat_models.dart';
 
+String _extractErrorMessage(DioException e, String defaultMessage) {
+  final data = e.response?.data;
+  if (data is Map<String, dynamic> && data['detail'] != null) {
+    return data['detail'].toString();
+  }
+  return defaultMessage;
+}
+
 // ============================================================
 // Conversations State & Notifier
 // ============================================================
@@ -60,8 +68,7 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
     } on DioException catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.response?.data?['detail']?.toString() ??
-            'Erro ao carregar conversas',
+        error: _extractErrorMessage(e, 'Erro ao carregar conversas'),
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -77,8 +84,7 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
       return conv;
     } on DioException catch (e) {
       state = state.copyWith(
-        error: e.response?.data?['detail']?.toString() ??
-            'Erro ao criar conversa',
+        error: _extractErrorMessage(e, 'Erro ao criar conversa'),
       );
       return null;
     }
@@ -101,8 +107,7 @@ class ConversationsNotifier extends StateNotifier<ConversationsState> {
       state = state.copyWith(conversations: active, archivedConversations: archived);
     } on DioException catch (e) {
       state = state.copyWith(
-        error: e.response?.data?['detail']?.toString() ??
-            'Erro ao atualizar conversa',
+        error: _extractErrorMessage(e, 'Erro ao atualizar conversa'),
       );
     } catch (e) {
       state = state.copyWith(error: e.toString());
@@ -165,8 +170,7 @@ class MessagesNotifier extends StateNotifier<MessagesState> {
     } on DioException catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.response?.data?['detail']?.toString() ??
-            'Erro ao carregar mensagens',
+        error: _extractErrorMessage(e, 'Erro ao carregar mensagens'),
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -176,41 +180,63 @@ class MessagesNotifier extends StateNotifier<MessagesState> {
   Future<void> send(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Otimistic UI: adicionar mensagem do usuário imediatamente
-    final optimisticMsg = ChatMessage(
-      id: 'pending-${DateTime.now().millisecondsSinceEpoch}',
+    final tempUserId = 'pending-user-${DateTime.now().millisecondsSinceEpoch}';
+    final tempAiId = 'pending-ai-${DateTime.now().millisecondsSinceEpoch}';
+
+    // Otimistic UI: adicionar mensagem do usuário e da IA imediatamente
+    final optimisticUserMsg = ChatMessage(
+      id: tempUserId,
       conversationId: _conversationId,
       role: 'user',
       content: text,
       createdAt: DateTime.now(),
     );
 
+    final optimisticAiMsg = ChatMessage(
+      id: tempAiId,
+      conversationId: _conversationId,
+      role: 'assistant',
+      content: '',
+      createdAt: DateTime.now(),
+    );
+
     state = state.copyWith(
-      messages: [...state.messages, optimisticMsg],
+      messages: [...state.messages, optimisticUserMsg, optimisticAiMsg],
       isSending: true,
       error: null,
     );
 
     try {
-      // O backend persiste a msg do usuário e retorna a resposta da IA.
-      // Recarregamos o histórico completo para refletir exatamente o que o servidor gravou.
-      await _api.sendMessage(_conversationId, text);
+      await _api.sendMessageStream(_conversationId, text, (chunk) {
+        final messages = List<ChatMessage>.from(state.messages);
+        final aiIndex = messages.indexWhere((m) => m.id == tempAiId);
+        if (aiIndex != -1) {
+          final oldMsg = messages[aiIndex];
+          messages[aiIndex] = ChatMessage(
+            id: oldMsg.id,
+            conversationId: oldMsg.conversationId,
+            role: oldMsg.role,
+            content: oldMsg.content + chunk,
+            createdAt: oldMsg.createdAt,
+          );
+          state = state.copyWith(messages: messages);
+        }
+      });
+      // Após sucesso, a mensagem foi escrita no banco pelo servidor.
+      // Recarregamos a lista oficial para pegar os IDs finais do DB e sumários.
       await load();
       // Garantir que isSending volta para false após sucesso
       state = state.copyWith(isSending: false);
     } on DioException catch (e) {
       // Remover mensagem otimista em caso de erro
       state = state.copyWith(
-        messages:
-            state.messages.where((m) => m.id != optimisticMsg.id).toList(),
+        messages: state.messages.where((m) => m.id != tempUserId && m.id != tempAiId).toList(),
         isSending: false,
-        error: e.response?.data?['detail']?.toString() ??
-            'Erro ao enviar mensagem',
+        error: _extractErrorMessage(e, 'Erro ao enviar mensagem'),
       );
     } catch (e) {
       state = state.copyWith(
-        messages:
-            state.messages.where((m) => m.id != optimisticMsg.id).toList(),
+        messages: state.messages.where((m) => m.id != tempUserId && m.id != tempAiId).toList(),
         isSending: false,
         error: e.toString(),
       );

@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
+from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, SystemMessage
 from config.agent_prompt import GUARDRAIL_SYSTEM_PROMPT
 from llm_config import get_llm
+from utils.callbacks import ObservabilityCallbackHandler
 
 logger = logging.getLogger(__name__)
+
+class GuardrailResult(BaseModel):
+    inside_scope: bool = Field(description="True se a pergunta for sobre medicamentos, posologias, reações adversas ou interações. False caso contrário.")
+    rejection_reason: str = Field(description="Mensagem educada caso esteja fora do escopo. Vazia se dentro do escopo.")
 
 class GuardrailService:
     @staticmethod
@@ -22,25 +27,16 @@ class GuardrailService:
         """
         try:
             llm = get_llm()
+            structured_llm = llm.with_structured_output(GuardrailResult)
             messages = [
                 SystemMessage(content=GUARDRAIL_SYSTEM_PROMPT),
                 HumanMessage(content=user_message)
             ]
-            response = await llm.ainvoke(messages)
-            content = response.content.strip()
             
-            # Limpa possíveis blocos de código markdown que a LLM possa gerar
-            if content.startswith("```"):
-                lines = content.split("\n")
-                if lines[0].startswith("```json") or lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines and lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                content = "\n".join(lines).strip()
+            result: GuardrailResult = await structured_llm.ainvoke(messages, config={"callbacks": [ObservabilityCallbackHandler()]})
             
-            result = json.loads(content)
-            inside_scope = bool(result.get("inside_scope", True))
-            rejection_reason = result.get("rejection_reason", "")
+            inside_scope = result.inside_scope
+            rejection_reason = result.rejection_reason
             
             # Se fora do escopo e sem motivo, adiciona um motivo padrão educado
             if not inside_scope and not rejection_reason:

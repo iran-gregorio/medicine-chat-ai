@@ -1,6 +1,7 @@
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -20,6 +21,13 @@ from llm_config import get_llm, get_vectorstore
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from config.agent_prompt import SYSTEM_PROMPT
 from services.guardrails import GuardrailService
+
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.memory import ConversationSummaryBufferMemory
+from services.chat_history_memory import CustomSQLChatMessageHistory
+from utils.callbacks import ObservabilityCallbackHandler
 
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -120,7 +128,7 @@ async def list_messages(
     return messages
 
 
-@router.post("/conversations/{id}/messages", response_model=MessageResponse)
+@router.post("/conversations/{id}/messages")
 async def send_message(
     id: uuid.UUID,
     request: MessageCreate,
@@ -128,8 +136,7 @@ async def send_message(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Envia uma mensagem no chat, executa a busca vetorial (RAG) no pgvector,
-    carrega histórico de mensagens recentes como contexto, aciona o LLM e persiste ambos no banco de dados.
+    Envia uma mensagem no chat via streaming, utiliza RAG e LCEL Chain.
     """
     user_uuid = uuid.UUID(current_user)
 
@@ -148,79 +155,81 @@ async def send_message(
 
     history_service = PostgresChatHistory(db)
 
-    # 1.5. Executar Guardrail de Entrada
+    # 2. Executar Guardrail de Entrada
     guardrail_res = await GuardrailService.check_input_scope(request.content)
     if not guardrail_res["inside_scope"]:
         rejection_msg = guardrail_res["rejection_reason"]
-        # Gravar turno do usuário e resposta educada no histórico
-        await history_service.add_message(conversation_id=id, role="user", content=request.content)
-        assistant_msg = await history_service.add_message(
-            conversation_id=id, role="assistant", content=rejection_msg
-        )
-        return assistant_msg
+        
+        async def generate_rejection():
+            await history_service.add_message(conversation_id=id, role="user", content=request.content)
+            await history_service.add_message(conversation_id=id, role="assistant", content=rejection_msg)
+            yield rejection_msg
+            
+        return StreamingResponse(generate_rejection(), media_type="text/event-stream")
 
-    # 2. Busca Vetorial de Contexto (RAG) no pgvector
-    rag_context = ""
-    try:
-        vectorstore = await get_vectorstore()
-        # Executa similaridade em banco de dados das bulas da ANVISA
-        docs = vectorstore.similarity_search(request.content, k=3)
-        if docs:
-            rag_context = "\n\n".join([doc.page_content for doc in docs])
-    except Exception as e:
-        # Fallback tolerante a falhas (ex: base RAG ainda vazia)
-        print(f"Alerta: Erro ao realizar busca pgvector RAG: {str(e)}")
-
-    # 3. Carrega o histórico recente do banco
+    # 3. Configurar Memória
     past_messages = await history_service.load_messages(conversation_id=id)
-
-    # 4. Formata a pilha de mensagens para a LLM
-    messages_for_llm = []
-
-    # System Message (com RAG e Resumo de histórico se houver)
-    system_content = SYSTEM_PROMPT
-    
-    if conversation.summary:
-        system_content += f"\nResumo consolidado do histórico médico anterior:\n{conversation.summary}\n"
-
-    if rag_context:
-        system_content += (
-            f"\nUtilize as seguintes informações factuais sobre medicamentos obtidas da ANVISA para enriquecer sua resposta:\n"
-            f"{rag_context}\n"
-        )
-
-    messages_for_llm.append(SystemMessage(content=system_content))
-
-    # Turnos de conversa passados
+    chat_history = CustomSQLChatMessageHistory()
     for msg in past_messages:
         if msg.role == "user":
-            messages_for_llm.append(HumanMessage(content=msg.content))
+            chat_history.add_user_message(msg.content)
         else:
-            messages_for_llm.append(AIMessage(content=msg.content))
+            chat_history.add_ai_message(msg.content)
 
-    # Nova mensagem do usuário
-    messages_for_llm.append(HumanMessage(content=request.content))
-
-    # 5. Invoca a LLM
-    try:
-        llm = get_llm()
-        response = llm.invoke(messages_for_llm)
-        reply_content = response.content
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro interno de comunicação com a IA: {str(e)}",
-        )
-
-    # 6. Gravar mensagens no Banco de Dados
-    # Adicionar turno do usuário
-    await history_service.add_message(conversation_id=id, role="user", content=request.content)
-    # Adicionar turno do assistente
-    assistant_msg = await history_service.add_message(
-        conversation_id=id, role="assistant", content=reply_content
+    memory = ConversationSummaryBufferMemory(
+        llm=get_llm(),
+        max_token_limit=2000,
+        chat_memory=chat_history,
+        return_messages=True
     )
+    if conversation.summary:
+        memory.moving_summary_buffer = conversation.summary
 
-    # 7. Dispara compressão/resumo automático se necessário
-    await history_service.summarize_if_needed(conversation_id=id)
+    # 4. Criar Chain LCEL
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", SYSTEM_PROMPT + "\n\nUtilize as seguintes informações factuais sobre medicamentos obtidas da ANVISA para enriquecer sua resposta:\n{context}\n"),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}")
+    ])
+    
+    vectorstore = await get_vectorstore()
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    
+    llm = get_llm()
+    question_answer_chain = create_stuff_documents_chain(llm, prompt)
+    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
-    return assistant_msg
+    # 5. Streamer e Callback
+    async def generate_response():
+        # Grava a mensagem do usuário
+        await history_service.add_message(conversation_id=id, role="user", content=request.content)
+        
+        memory_vars = memory.load_memory_variables({})
+        chat_history_messages = memory_vars.get("history", [])
+        
+        full_response = ""
+        try:
+            async for chunk in rag_chain.astream(
+                {"input": request.content, "chat_history": chat_history_messages},
+                config={"callbacks": [ObservabilityCallbackHandler()]}
+            ):
+                if "answer" in chunk:
+                    token = chunk["answer"]
+                    full_response += token
+                    yield token
+        except Exception as e:
+            error_msg = f"\n[Erro na comunicação com a IA: {str(e)}]"
+            full_response += error_msg
+            yield error_msg
+            
+        if full_response:
+            # Grava a mensagem do assistente
+            await history_service.add_message(conversation_id=id, role="assistant", content=full_response)
+            
+            # Atualiza o summary buffer
+            memory.save_context({"input": request.content}, {"output": full_response})
+            if memory.moving_summary_buffer and memory.moving_summary_buffer != conversation.summary:
+                conversation.summary = memory.moving_summary_buffer
+                await db.commit()
+
+    return StreamingResponse(generate_response(), media_type="text/event-stream")

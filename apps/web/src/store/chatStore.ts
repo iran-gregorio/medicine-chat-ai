@@ -98,36 +98,52 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!activeConversationId) return;
 
     // Criar mensagem otimista do usuário
-    const tempId = `temp-${Date.now()}`;
-    const optimisticMessage: ChatMessage = {
-      id: tempId,
+    const tempUserId = `temp-user-${Date.now()}`;
+    const optimisticUserMessage: ChatMessage = {
+      id: tempUserId,
       conversation_id: activeConversationId,
       role: 'user',
       content: text,
       created_at: new Date().toISOString(),
     };
 
+    // Criar mensagem otimista do assistente (vazia no início)
+    const tempAiId = `temp-ai-${Date.now()}`;
+    const optimisticAiMessage: ChatMessage = {
+      id: tempAiId,
+      conversation_id: activeConversationId,
+      role: 'assistant',
+      content: '',
+      created_at: new Date().toISOString(),
+    };
+
     set({ 
-      messages: [...messages, optimisticMessage],
+      messages: [...messages, optimisticUserMessage, optimisticAiMessage],
       isSending: true,
       error: null
     });
 
     try {
-      const aiReply = await chatApi.sendMessage(activeConversationId, text);
+      await chatApi.sendMessageStream(activeConversationId, text, (chunk) => {
+        set((state) => {
+          const newMessages = [...state.messages];
+          const aiMessageIndex = newMessages.findIndex(m => m.id === tempAiId);
+          if (aiMessageIndex !== -1) {
+            newMessages[aiMessageIndex] = {
+              ...newMessages[aiMessageIndex],
+              content: newMessages[aiMessageIndex].content + chunk
+            };
+          }
+          return { messages: newMessages };
+        });
+      });
       
-      // Substituir a lista de mensagens completa para garantir consistência e ordenação correta
       set((state) => {
-        // Remove a mensagem otimista temporária e adiciona a oficial do usuário e a resposta da IA
-        const cleanMessages = state.messages.filter(m => m.id !== tempId);
-        
-        // Também vamos atualizar o updatedAt da conversa ativa na lista de conversas
         const updatedConversations = state.conversations.map((c) => {
           if (c.id === activeConversationId) {
             return {
               ...c,
               updated_at: new Date().toISOString(),
-              // Atualiza o título se for o primeiro turno
               title: c.title === 'Nova Conversa' ? text.substring(0, 50) : c.title,
             };
           }
@@ -137,16 +153,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
         );
 
         return {
-          messages: [...cleanMessages, optimisticMessage, aiReply],
           conversations: updatedConversations,
           isSending: false,
         };
       });
     } catch (err: any) {
-      // Em caso de erro, reverte a mensagem otimista
       set((state) => ({
-        messages: state.messages.filter((m) => m.id !== tempId),
-        error: err.response?.data?.detail || 'Falha ao enviar mensagem. Verifique sua conexão.',
+        messages: state.messages.filter((m) => m.id !== tempUserId && m.id !== tempAiId),
+        error: err.message || 'Falha ao enviar mensagem. Verifique sua conexão.',
         isSending: false,
       }));
     }
