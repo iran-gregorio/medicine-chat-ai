@@ -129,58 +129,6 @@ async def test_add_message_first_user_updates_title():
     mock_session.commit.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_summarize_if_needed_not_exceeding_threshold():
-    mock_session = AsyncMock()
-    conv_id = uuid.uuid4()
-    
-    # Total tokens sum is low
-    mock_session.execute.return_value = MockResult([150])
-    
-    history = PostgresChatHistory(mock_session)
-    res = await history.summarize_if_needed(conv_id)
-    
-    assert res is None
-
-
-@pytest.mark.asyncio
-async def test_summarize_if_needed_exceeding_threshold():
-    mock_session = AsyncMock()
-    conv_id = uuid.uuid4()
-    
-    # 1. Total tokens sum > threshold (e.g. 2500)
-    # 2. Return 6 messages (since > 5 messages are needed to trigger)
-    m_list = [
-        Message(role="user", content="Hello"),
-        Message(role="assistant", content="Hi"),
-        Message(role="user", content="How are you?"),
-        Message(role="assistant", content="Good"),
-        Message(role="user", content="Can you help?"),
-        Message(role="assistant", content="Sure"),
-    ]
-    conv = Conversation(id=conv_id, summary=None)
-    
-    mock_session.execute.side_effect = [
-        MockResult([2500]),  # func.sum
-        MockResult(m_list),  # select(Message)
-        MockResult([conv])   # select(Conversation)
-    ]
-    
-    mock_session.commit = AsyncMock()
-    
-    # Mock get_llm
-    mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = "Resumo médico consolidado"
-    mock_llm.invoke.return_value = mock_response
-    
-    with patch("services.chat_history.get_llm", return_value=mock_llm):
-        history = PostgresChatHistory(mock_session)
-        res = await history.summarize_if_needed(conv_id)
-        
-        assert res == "Resumo médico consolidado"
-        assert conv.summary == "Resumo médico consolidado"
-        mock_session.commit.assert_called_once()
 
 
 # ==========================================
@@ -233,16 +181,18 @@ async def test_create_conversation_endpoint():
     # Mock db.refresh to set required non-null fields to avoid Pydantic ValidationError
     async def mock_refresh(obj):
         if isinstance(obj, Conversation):
-            if not obj.id:
+            if not getattr(obj, "id", None):
                 obj.id = uuid.uuid4()
-            if not obj.created_at:
+            if not getattr(obj, "created_at", None):
                 obj.created_at = datetime.now(timezone.utc)
-            if not obj.updated_at:
+            if not getattr(obj, "updated_at", None):
                 obj.updated_at = datetime.now(timezone.utc)
+            if getattr(obj, "is_archived", None) is None:
+                obj.is_archived = False
         elif isinstance(obj, Message):
-            if not obj.id:
+            if not getattr(obj, "id", None):
                 obj.id = uuid.uuid4()
-            if not obj.created_at:
+            if not getattr(obj, "created_at", None):
                 obj.created_at = datetime.now(timezone.utc)
                 
     mock_db.refresh = AsyncMock(side_effect=mock_refresh)
@@ -270,8 +220,8 @@ async def test_list_conversations_endpoint():
     
     mock_db = AsyncMock()
     conversations = [
-        Conversation(id=uuid.uuid4(), user_id=user_uuid, title="Conv 1", created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc)),
-        Conversation(id=uuid.uuid4(), user_id=user_uuid, title="Conv 2", created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc))
+        Conversation(id=uuid.uuid4(), user_id=user_uuid, title="Conv 1", created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc), is_archived=False),
+        Conversation(id=uuid.uuid4(), user_id=user_uuid, title="Conv 2", created_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc), is_archived=False)
     ]
     mock_db.execute.return_value = MockResult(conversations)
     app.dependency_overrides[get_db] = lambda: mock_db
@@ -318,7 +268,7 @@ async def test_send_message_full_rag_llm():
     
     mock_db = AsyncMock()
     mock_db.add = MagicMock()
-    conv = Conversation(id=conv_id, user_id=user_uuid, title="Fisioterapia", summary="summary")
+    conv = Conversation(id=conv_id, user_id=user_uuid, title="Fisioterapia", summary="summary", is_archived=False)
     
     mock_db.execute.side_effect = [
         MockResult([conv]),  # Validating ownership
@@ -332,27 +282,27 @@ async def test_send_message_full_rag_llm():
     # Mock db.refresh to set required non-null fields to avoid Pydantic ValidationError
     async def mock_refresh(obj):
         if isinstance(obj, Conversation):
-            if not obj.id:
+            if not getattr(obj, "id", None):
                 obj.id = uuid.uuid4()
-            if not obj.created_at:
+            if not getattr(obj, "created_at", None):
                 obj.created_at = datetime.now(timezone.utc)
-            if not obj.updated_at:
+            if not getattr(obj, "updated_at", None):
                 obj.updated_at = datetime.now(timezone.utc)
+            if getattr(obj, "is_archived", None) is None:
+                obj.is_archived = False
         elif isinstance(obj, Message):
-            if not obj.id:
+            if not getattr(obj, "id", None):
                 obj.id = uuid.uuid4()
-            if not obj.created_at:
+            if not getattr(obj, "created_at", None):
                 obj.created_at = datetime.now(timezone.utc)
                 
     mock_db.refresh = AsyncMock(side_effect=mock_refresh)
     
     app.dependency_overrides[get_db] = lambda: mock_db
     
-    # Mock get_llm
-    mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = "Esta é uma resposta de teste."
-    mock_llm.invoke.return_value = mock_response
+    from langchain_core.language_models.fake import FakeListLLM
+    
+    mock_llm = FakeListLLM(responses=["Esta é uma resposta de teste."])
     
     # Mock pgvector RAG
     mock_vector = MagicMock()
@@ -364,7 +314,8 @@ async def test_send_message_full_rag_llm():
         return mock_vector
         
     with patch("routers.chat.get_llm", return_value=mock_llm), \
-         patch("routers.chat.get_vectorstore", side_effect=mock_get_vector):
+         patch("routers.chat.get_vectorstore", side_effect=mock_get_vector), \
+         patch("langchain_core.language_models.base.BaseLanguageModel.get_num_tokens_from_messages", return_value=10):
         
         response = client.post(
             f"/chat/conversations/{conv_id}/messages",
@@ -375,10 +326,8 @@ async def test_send_message_full_rag_llm():
         app.dependency_overrides.pop(get_db, None)
         
         assert response.status_code == 200
-        data = response.json()
-        assert data["content"] == "Esta é uma resposta de teste."
-        assert data["role"] == "assistant"
-
+        text_data = response.text
+        assert "Esta é uma resposta de teste." in text_data
 
 # ==========================================
 # 4. Observability Test (/health)

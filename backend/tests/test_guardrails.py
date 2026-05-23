@@ -41,10 +41,13 @@ class MockResult:
 @pytest.mark.asyncio
 async def test_guardrail_inside_scope():
     """Valida que mensagens dentro do escopo de medicamentos são aceitas."""
+    from services.guardrails import GuardrailResult
+    
+    mock_structured_llm = MagicMock()
+    mock_structured_llm.ainvoke = AsyncMock(return_value=GuardrailResult(inside_scope=True, rejection_reason=""))
+    
     mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = '{"inside_scope": true, "rejection_reason": ""}'
-    mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+    mock_llm.with_structured_output.return_value = mock_structured_llm
     
     with patch("services.guardrails.get_llm", return_value=mock_llm):
         res = await GuardrailService.check_input_scope("Para que serve Paracetamol?")
@@ -55,10 +58,13 @@ async def test_guardrail_inside_scope():
 @pytest.mark.asyncio
 async def test_guardrail_outside_scope():
     """Valida que mensagens fora do escopo são adequadamente rejeitadas."""
+    from services.guardrails import GuardrailResult
+
+    mock_structured_llm = MagicMock()
+    mock_structured_llm.ainvoke = AsyncMock(return_value=GuardrailResult(inside_scope=False, rejection_reason="Como farmacêutico de IA, atendo apenas dúvidas de medicamentos."))
+    
     mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = '{"inside_scope": false, "rejection_reason": "Como farmacêutico de IA, atendo apenas dúvidas de medicamentos."}'
-    mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+    mock_llm.with_structured_output.return_value = mock_structured_llm
     
     with patch("services.guardrails.get_llm", return_value=mock_llm):
         res = await GuardrailService.check_input_scope("Qual a previsão do tempo hoje?")
@@ -69,10 +75,13 @@ async def test_guardrail_outside_scope():
 @pytest.mark.asyncio
 async def test_guardrail_markdown_json():
     """Garante resiliência caso a LLM retorne o JSON delimitado por blocos markdown."""
+    from services.guardrails import GuardrailResult
+    
+    mock_structured_llm = MagicMock()
+    mock_structured_llm.ainvoke = AsyncMock(return_value=GuardrailResult(inside_scope=False, rejection_reason="Rejeição Markdown"))
+    
     mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = '```json\n{"inside_scope": false, "rejection_reason": "Rejeição Markdown"}\n```'
-    mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+    mock_llm.with_structured_output.return_value = mock_structured_llm
     
     with patch("services.guardrails.get_llm", return_value=mock_llm):
         res = await GuardrailService.check_input_scope("Escreva uma piada sobre farmacêuticos.")
@@ -83,8 +92,11 @@ async def test_guardrail_markdown_json():
 @pytest.mark.asyncio
 async def test_guardrail_fallback_on_exception():
     """Garante que falhas de comunicação com a API não bloqueiem o usuário (fallback in_scope=True)."""
+    mock_structured_llm = MagicMock()
+    mock_structured_llm.ainvoke = AsyncMock(side_effect=Exception("API Connection Failure"))
+    
     mock_llm = MagicMock()
-    mock_llm.ainvoke = AsyncMock(side_effect=Exception("API Connection Failure"))
+    mock_llm.with_structured_output.return_value = mock_structured_llm
     
     with patch("services.guardrails.get_llm", return_value=mock_llm):
         res = await GuardrailService.check_input_scope("Para que serve Paracetamol?")
@@ -141,9 +153,8 @@ async def test_endpoint_rejected_by_guardrail():
         app.dependency_overrides.pop(get_db, None)
         
         assert response.status_code == 200
-        data = response.json()
-        assert data["role"] == "assistant"
-        assert data["content"] == "Desculpe, meu escopo de atuação é apenas sobre medicamentos."
+        text_data = response.text
+        assert "Desculpe, meu escopo de atuação é apenas sobre medicamentos." in text_data
 
 
 @pytest.mark.asyncio
@@ -178,10 +189,9 @@ async def test_endpoint_allowed_by_guardrail():
     mock_db.refresh = AsyncMock(side_effect=mock_refresh)
     app.dependency_overrides[get_db] = lambda: mock_db
     
-    mock_llm = MagicMock()
-    mock_response = MagicMock()
-    mock_response.content = "O Paracetamol serve para febre e dor."
-    mock_llm.invoke.return_value = mock_response
+    from langchain_core.language_models.fake import FakeListLLM
+    
+    mock_llm = FakeListLLM(responses=["O Paracetamol serve para febre e dor."])
     
     mock_vector = MagicMock()
     mock_vector.similarity_search.return_value = []
@@ -196,7 +206,8 @@ async def test_endpoint_allowed_by_guardrail():
     
     with patch("routers.chat.GuardrailService.check_input_scope", return_value=mock_guardrail_res), \
          patch("routers.chat.get_llm", return_value=mock_llm), \
-         patch("routers.chat.get_vectorstore", side_effect=mock_get_vector):
+         patch("routers.chat.get_vectorstore", side_effect=mock_get_vector), \
+         patch("langchain_core.language_models.base.BaseLanguageModel.get_num_tokens_from_messages", return_value=10):
          
         response = client.post(
             f"/chat/conversations/{conv_id}/messages",
@@ -207,6 +218,5 @@ async def test_endpoint_allowed_by_guardrail():
         app.dependency_overrides.pop(get_db, None)
         
         assert response.status_code == 200
-        data = response.json()
-        assert data["role"] == "assistant"
-        assert data["content"] == "O Paracetamol serve para febre e dor."
+        text_data = response.text
+        assert "O Paracetamol serve para febre e dor." in text_data
