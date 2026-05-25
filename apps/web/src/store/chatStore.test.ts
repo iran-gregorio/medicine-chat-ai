@@ -9,7 +9,8 @@ vi.mock('../lib/chatApi', () => {
       fetchConversations: vi.fn(),
       createConversation: vi.fn(),
       fetchMessages: vi.fn(),
-      sendMessage: vi.fn(),
+      sendMessageStream: vi.fn(),
+      updateConversation: vi.fn(),
     },
   };
 });
@@ -32,8 +33,8 @@ describe('chatStore', () => {
   describe('loadConversations', () => {
     it('deve carregar e ordenar conversas por data de atualizacao decrescente', async () => {
       const mockConvs = [
-        { id: '1', title: 'Conversa 1', summary: 'Resumo 1', created_at: '2026-05-19T10:00:00Z', updated_at: '2026-05-19T10:00:00Z' },
-        { id: '2', title: 'Conversa 2', summary: 'Resumo 2', created_at: '2026-05-19T11:00:00Z', updated_at: '2026-05-19T11:00:00Z' },
+        { id: '1', title: 'Conversa 1', summary: 'Resumo 1', is_archived: false, created_at: '2026-05-19T10:00:00Z', updated_at: '2026-05-19T10:00:00Z' },
+        { id: '2', title: 'Conversa 2', summary: 'Resumo 2', is_archived: false, created_at: '2026-05-19T11:00:00Z', updated_at: '2026-05-19T11:00:00Z' },
       ];
       vi.mocked(chatApi.fetchConversations).mockResolvedValue(mockConvs);
 
@@ -91,7 +92,7 @@ describe('chatStore', () => {
 
   describe('createConversation', () => {
     it('deve criar conversa e adiciona-la ao topo da lista', async () => {
-      const newConv = { id: '3', title: 'Nova Conversa', summary: null, created_at: '2026-05-19T12:00:00Z', updated_at: '2026-05-19T12:00:00Z' };
+      const newConv = { id: '3', title: 'Nova Conversa', summary: null, is_archived: false, created_at: '2026-05-19T12:00:00Z', updated_at: '2026-05-19T12:00:00Z' };
       vi.mocked(chatApi.createConversation).mockResolvedValue(newConv);
 
       const id = await useChatStore.getState().createConversation();
@@ -110,21 +111,24 @@ describe('chatStore', () => {
       useChatStore.setState({
         activeConversationId: '1',
         conversations: [
-          { id: '1', title: 'Nova Conversa', summary: null, created_at: '2026-05-19T10:00:00Z', updated_at: '2026-05-19T10:00:00Z' },
+          { id: '1', title: 'Nova Conversa', summary: null, is_archived: false, created_at: '2026-05-19T10:00:00Z', updated_at: '2026-05-19T10:00:00Z' },
         ],
         messages: [],
       });
     });
 
     it('deve enviar mensagem com sucesso (envio otimista e atualizacao)', async () => {
-      const aiReply = { id: 'm2', conversation_id: '1', role: 'assistant' as const, content: 'Resposta da IA', created_at: '2026-05-19T10:01:00Z' };
       
-      // Criamos uma promise controlada para simular o delay do envio e testar o estado intermediario otimista
       let resolveSend: any;
-      const sendPromise = new Promise<any>((resolve) => {
-        resolveSend = () => resolve(aiReply);
+      vi.mocked(chatApi.sendMessageStream).mockImplementation(async (_id, _text, onChunk) => {
+        return new Promise<void>((resolve) => {
+          resolveSend = () => {
+            onChunk('Resposta ');
+            onChunk('da IA');
+            resolve();
+          };
+        });
       });
-      vi.mocked(chatApi.sendMessage).mockReturnValue(sendPromise);
 
       // Dispara o envio
       const promise = useChatStore.getState().sendMessage('Minha mensagem');
@@ -153,7 +157,7 @@ describe('chatStore', () => {
     });
 
     it('deve reverter envio otimista e expor erro em caso de falha', async () => {
-      vi.mocked(chatApi.sendMessage).mockRejectedValue(new Error('Erro de conexao'));
+      vi.mocked(chatApi.sendMessageStream).mockRejectedValue(new Error('Erro de conexao'));
 
       await useChatStore.getState().sendMessage('Mensagem falha');
 
