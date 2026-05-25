@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-from db import get_vectorstore
+from db import get_vectorstore, engine
 import re
 
 def redact_pii(text: str) -> str:
@@ -35,9 +35,8 @@ async def clear_existing_pdf_embeddings(filename: str, vectorstore):
     Remove do banco todos os embeddings antigos correspondentes a um determinado arquivo PDF
     para evitar duplicações e desperdício de embeddings.
     """
-    engine = vectorstore._engine
-    with engine.begin() as conn:
-        conn.execute(
+    async with engine.begin() as conn:
+        await conn.execute(
             text(
                 "DELETE FROM langchain_pg_embedding "
                 "WHERE cmetadata ->> 'filename' = :filename "
@@ -70,6 +69,9 @@ async def process_local_pdfs(dir_path: str):
 
     print(f"Encontrados {len(pdf_files)} arquivos PDF para processamento.")
     vectorstore = await get_vectorstore()
+    
+    # Ensure tables exist before trying to delete from them
+    await vectorstore.acreate_tables_if_not_exists()
     
     # Configura o splitter de texto
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
@@ -120,7 +122,7 @@ async def process_local_pdfs(dir_path: str):
             await clear_existing_pdf_embeddings(filename, vectorstore)
             
             print(f"  -> Gerando embeddings e inserindo {len(documents)} blocos de texto...")
-            vectorstore.add_documents(documents)
+            await vectorstore.aadd_documents(documents)
             print(f"  ✓ Processamento e indexação de '{filename}' concluídos com sucesso!")
             
         except Exception as e:

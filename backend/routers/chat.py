@@ -233,3 +233,16 @@ async def send_message(
                 await db.commit()
 
     return StreamingResponse(generate_response(), media_type="text/event-stream")
+
+from services.chat_purge import purge_old_messages
+
+@router.post("/internal/purge")
+async def trigger_purge(
+    db: AsyncSession = Depends(get_db)
+):
+    """Executa a limpeza de mensagens antigas. Idealmente protegido por IAM ou headers no Cloud Run."""
+    try:
+        stats = await purge_old_messages(db)
+        return {"status": "success", "stats": stats}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
