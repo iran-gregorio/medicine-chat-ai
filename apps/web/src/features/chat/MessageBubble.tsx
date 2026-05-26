@@ -194,6 +194,36 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                     {children}
                   </a>
                 ),
+                table: ({ children }) => (
+                  <div style={{ overflowX: 'auto', marginBottom: '8px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    {children}
+                  </thead>
+                ),
+                tbody: ({ children }) => (
+                  <tbody>{children}</tbody>
+                ),
+                tr: ({ children }) => (
+                  <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                    {children}
+                  </tr>
+                ),
+                th: ({ children }) => (
+                  <th style={{ padding: '10px 12px', fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                    {children}
+                  </th>
+                ),
+                td: ({ children }) => (
+                  <td style={{ padding: '10px 12px', color: '#334155' }}>
+                    {children}
+                  </td>
+                ),
               }}
             >
               {message.content}
