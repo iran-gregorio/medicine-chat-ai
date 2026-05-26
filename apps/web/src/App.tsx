@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './store/authStore';
@@ -18,7 +19,7 @@ const navItems = [
   { to: '/chat', label: 'chatTitle', icon: MessageSquare, exact: false },
 ];
 
-function Sidebar() {
+function Sidebar({ isMobile }: { isMobile: boolean }) {
   const { t } = useTranslation();
   const logout = useAuthStore((state) => state.logout);
   const refreshToken = useAuthStore((state) => state.refreshToken);
@@ -33,6 +34,47 @@ function Sidebar() {
     }
     logout();
   };
+
+  if (isMobile) {
+    return (
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '60px',
+        background: 'white',
+        borderTop: '1px solid #E2E8F0',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        zIndex: 100,
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+      }}>
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            style={({ isActive }) => ({
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              textDecoration: 'none',
+              color: isActive ? '#3B82F6' : '#94A3B8',
+              flex: 1,
+              height: '100%',
+            })}
+          >
+            <Icon size={20} />
+            <span style={{ fontSize: '10px', fontWeight: 600 }}>{t(label)}</span>
+          </NavLink>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <aside style={{
@@ -116,10 +158,26 @@ function Sidebar() {
 }
 
 function AuthenticatedLayout() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F8FF' }}>
-      <Sidebar />
-      <main style={{ marginLeft: '240px', flex: 1, minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F8FF', flexDirection: isMobile ? 'column' : 'row' }}>
+      <Sidebar isMobile={isMobile} />
+      <main style={{ 
+        marginLeft: isMobile ? '0' : '240px', 
+        paddingBottom: isMobile ? '60px' : '0', 
+        flex: 1, 
+        height: '100vh', 
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <Outlet />
       </main>
     </div>
