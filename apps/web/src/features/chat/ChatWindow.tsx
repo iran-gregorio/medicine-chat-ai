@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Bot, RefreshCw, AlertCircle } from 'lucide-react';
+import { Bot, RefreshCw, AlertCircle, Menu } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import type { ChatMessage, Conversation } from '../../lib/chatApi';
@@ -13,6 +13,7 @@ interface ChatWindowProps {
   onSendMessage: (text: string) => void;
   onRefresh: () => void;
   onClearError: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -24,6 +25,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   onSendMessage,
   onRefresh,
   onClearError,
+  onToggleSidebar,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -48,8 +50,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           background: 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
           padding: '24px',
           textAlign: 'center',
+          position: 'relative',
         }}
       >
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            style={{
+              position: 'absolute', top: '16px', left: '16px',
+              background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', padding: '8px',
+              color: '#64748B', display: 'flex', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Menu size={20} />
+          </button>
+        )}
         <div
           style={{
             width: '84px',
@@ -108,6 +123,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
+                color: '#64748B', display: 'flex', alignItems: 'center'
+              }}
+            >
+              <Menu size={24} />
+            </button>
+          )}
           <div
             style={{
               width: '40px',
