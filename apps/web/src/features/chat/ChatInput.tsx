@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon } from 'lucide-react';
+import { Send, Paperclip, X } from 'lucide-react';
 
 interface ChatInputProps {
   onSend: (text: string, file?: File) => void;
