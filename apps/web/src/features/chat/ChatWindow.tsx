@@ -10,7 +10,7 @@ interface ChatWindowProps {
   isLoading: boolean;
   isSending: boolean;
   error: string | null;
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, file?: File) => void;
   onRefresh: () => void;
   onClearError: () => void;
   onToggleSidebar?: () => void;

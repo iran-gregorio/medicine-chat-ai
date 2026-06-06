@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +21,8 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatPageState extends ConsumerState<ChatPage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
 
   @override
   void dispose() {
@@ -41,13 +45,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImage == null) return;
 
+    final imagePath = _selectedImage?.path;
+
+    setState(() {
+      _selectedImage = null;
+    });
     _controller.clear();
+    
     await ref
         .read(messagesProvider(widget.conversationId).notifier)
-        .send(text);
+        .send(text, imagePath: imagePath);
     _scrollToBottom();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = pickedFile;
+      });
+    }
   }
 
   @override
@@ -203,74 +222,126 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 28),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundGrey,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: AppTheme.borderGrey),
-              ),
-              child: Row(
+          if (_selectedImage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0, left: 16),
+              child: Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      enabled: !isSending,
-                      maxLines: null,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                      style: const TextStyle(fontSize: 15),
-                      decoration: const InputDecoration(
-                        hintText: 'Descreva seus sintomas ou dúvida...',
-                        hintStyle:
-                            TextStyle(color: AppTheme.textGrey, fontSize: 14),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: FileImage(File(_selectedImage!.path)),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  Positioned(
+                    top: -8,
+                    right: -8,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedImage = null),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close, color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: isSending ? null : _sendMessage,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isSending
-                    ? AppTheme.primaryBlue.withValues(alpha: 0.5)
-                    : AppTheme.primaryBlue,
-                shape: BoxShape.circle,
-                boxShadow: isSending
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.35),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: isSending
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundGrey,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppTheme.borderGrey),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.camera_alt_outlined, color: AppTheme.primaryBlue),
+                        onPressed: isSending ? null : () => _pickImage(ImageSource.camera),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
                       ),
-                    )
-                  : const Icon(Icons.arrow_upward_rounded,
-                      color: Colors.white, size: 22),
-            ),
+                      IconButton(
+                        icon: const Icon(Icons.image_outlined, color: AppTheme.primaryBlue),
+                        onPressed: isSending ? null : () => _pickImage(ImageSource.gallery),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _controller,
+                          enabled: !isSending,
+                          maxLines: null,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _sendMessage(),
+                          style: const TextStyle(fontSize: 15),
+                          decoration: const InputDecoration(
+                            hintText: 'Descreva seus sintomas...',
+                            hintStyle:
+                                TextStyle(color: AppTheme.textGrey, fontSize: 14),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: isSending ? null : _sendMessage,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isSending
+                        ? AppTheme.primaryBlue.withValues(alpha: 0.5)
+                        : AppTheme.primaryBlue,
+                    shape: BoxShape.circle,
+                    boxShadow: isSending
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppTheme.primaryBlue.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: isSending
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Icon(Icons.arrow_upward_rounded,
+                          color: Colors.white, size: 22),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -397,12 +468,12 @@ class _MessageBubble extends StatelessWidget {
                             color: AppTheme.primaryBlue,
                             height: 1.55,
                           ),
-                          code: TextStyle(
+                          code: const TextStyle(
                             fontSize: 13,
                             fontFamily: 'monospace',
                             color: AppTheme.primaryBlue,
                             backgroundColor:
-                                const Color(0xFFF1F5F9),
+                                Color(0xFFF1F5F9),
                           ),
                           codeblockDecoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),

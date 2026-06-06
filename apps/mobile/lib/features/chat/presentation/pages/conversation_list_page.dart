@@ -344,7 +344,7 @@ class _ConversationCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(conversation.isArchived ? Icons.unarchive : Icons.archive, size: 20, color: AppTheme.textDark),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(conversation.isArchived ? 'Desarquivar' : 'Arquivar'),
                       ],
                     ),

@@ -70,6 +70,15 @@ class ChatApiService {
     return ChatMessage.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// Faz upload de uma imagem e retorna os dados de processamento OCR/RAG
+  Future<Map<String, dynamic>> uploadImage(String filePath) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    final response = await _dio.post('/images/upload', data: formData);
+    return response.data as Map<String, dynamic>;
+  }
+
   /// Envia uma mensagem para uma conversa e escuta a stream de texto via SSE.
   Future<void> sendMessageStream(
     String conversationId,

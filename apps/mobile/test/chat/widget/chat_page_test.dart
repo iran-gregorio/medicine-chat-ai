@@ -8,7 +8,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:medicine_chat_mobile/features/chat/data/chat_api_service.dart';
 import 'package:medicine_chat_mobile/features/chat/domain/chat_models.dart';
 import 'package:medicine_chat_mobile/features/chat/presentation/pages/chat_page.dart';
-import 'package:medicine_chat_mobile/features/chat/presentation/providers/chat_notifier.dart';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 

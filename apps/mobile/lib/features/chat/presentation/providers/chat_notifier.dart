@@ -177,8 +177,8 @@ class MessagesNotifier extends StateNotifier<MessagesState> {
     }
   }
 
-  Future<void> send(String text) async {
-    if (text.trim().isEmpty) return;
+  Future<void> send(String text, {String? imagePath}) async {
+    if (text.trim().isEmpty && imagePath == null) return;
 
     final tempUserId = 'pending-user-${DateTime.now().millisecondsSinceEpoch}';
     final tempAiId = 'pending-ai-${DateTime.now().millisecondsSinceEpoch}';
@@ -207,7 +207,27 @@ class MessagesNotifier extends StateNotifier<MessagesState> {
     );
 
     try {
-      await _api.sendMessageStream(_conversationId, text, (chunk) {
+      String finalContext = '';
+      if (imagePath != null) {
+        final uploadResult = await _api.uploadImage(imagePath);
+        final extractedText = uploadResult['extracted_text'] ?? '';
+        final anonymizedText = uploadResult['anonymized_text'];
+        final ragContext = uploadResult['rag_context'];
+
+        finalContext += "O usuário enviou uma imagem.\n";
+        if (anonymizedText != null) {
+          finalContext += "Texto extraído da imagem: $anonymizedText\n";
+        } else {
+          finalContext += "Texto extraído da imagem: $extractedText\n";
+        }
+        if (ragContext != null && ragContext.toString().trim().isNotEmpty) {
+          finalContext += "Contexto relevante sobre a imagem: $ragContext\n";
+        }
+      }
+
+      final fullMessage = finalContext.isNotEmpty ? "$finalContext\nMensagem do usuário: $text" : text;
+
+      await _api.sendMessageStream(_conversationId, fullMessage, (chunk) {
         final messages = List<ChatMessage>.from(state.messages);
         final aiIndex = messages.indexWhere((m) => m.id == tempAiId);
         if (aiIndex != -1) {

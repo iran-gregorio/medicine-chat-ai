@@ -13,11 +13,20 @@ export interface ChatMessage {
   id: string;
   conversation_id: string;
   role: 'user' | 'assistant';
-  content: string;
-  created_at: string;
 }
 
 export const chatApi = {
+  uploadImage: async (file: File): Promise<{ anonymized_preview: string; message: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   fetchConversations: async (archived = false): Promise<Conversation[]> => {
     const response = await api.get<Conversation[]>('/chat/conversations', { params: { archived } });
     return response.data;

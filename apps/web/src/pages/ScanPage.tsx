@@ -1,11 +1,36 @@
 import { useRef, useState } from 'react';
-import { Camera, HelpCircle, X, FileText } from 'lucide-react';
+import { Camera, HelpCircle, X, FileText, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../store/chatStore';
 
 export default function ScanPage() {
+  const navigate = useNavigate();
+  const { createConversation, sendMessage } = useChatStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAnalyze = async () => {
+    if (!uploadedFile) return;
+    setIsAnalyzing(true);
+    
+    try {
+      const convId = await createConversation('Análise de Medicamento');
+      if (convId) {
+        // We do not await sendMessage here so the user can see the loading state in the chat window,
+        // or we can await it if we want to stay on the scan page until the first chunk arrives.
+        // Usually, navigating immediately is better.
+        sendMessage('Por favor, analise as informações deste medicamento.', uploadedFile);
+        navigate('/chat');
+      }
+    } catch (error) {
+      console.error('Failed to start analysis', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
@@ -141,7 +166,8 @@ export default function ScanPage() {
 
           {/* Analyze button */}
           <button
-            disabled={!uploadedFile}
+            disabled={!uploadedFile || isAnalyzing}
+            onClick={handleAnalyze}
             style={{
               marginTop: '16px', width: '100%', padding: '16px',
               borderRadius: '16px', border: 'none',
@@ -149,12 +175,22 @@ export default function ScanPage() {
                 ? 'linear-gradient(135deg, #14B8A6, #0D9488)'
                 : '#E2E8F0',
               color: uploadedFile ? 'white' : '#94A3B8',
-              fontWeight: 700, fontSize: '16px', cursor: uploadedFile ? 'pointer' : 'not-allowed',
+              fontWeight: 700, fontSize: '16px', cursor: (uploadedFile && !isAnalyzing) ? 'pointer' : 'not-allowed',
               boxShadow: uploadedFile ? '0 6px 24px rgba(20,184,166,0.35)' : 'none',
               transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}
           >
-            🔍 Analisar Documento
+            {isAnalyzing ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Iniciando Análise...
+              </>
+            ) : (
+              <>
+                🔍 Analisar Documento
+              </>
+            )}
           </button>
         </div>
 

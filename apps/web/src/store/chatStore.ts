@@ -16,7 +16,7 @@ interface ChatState {
   loadArchivedConversations: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
   createConversation: (title?: string) => Promise<string | null>;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, file?: File) => Promise<void>;
   updateConversationDetails: (id: string, updates: { title?: string; is_archived?: boolean }) => Promise<void>;
   clearError: () => void;
 }
@@ -93,17 +93,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  sendMessage: async (text: string) => {
+  sendMessage: async (text: string, file?: File) => {
     const { activeConversationId, messages } = get();
     if (!activeConversationId) return;
 
     // Criar mensagem otimista do usuário
     const tempUserId = `temp-user-${Date.now()}`;
+    const userDisplayContent = file ? `${text}\n[Imagem anexada: ${file.name}]` : text;
     const optimisticUserMessage: ChatMessage = {
       id: tempUserId,
       conversation_id: activeConversationId,
       role: 'user',
-      content: text,
+      content: userDisplayContent,
       created_at: new Date().toISOString(),
     };
 
@@ -124,7 +125,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      await chatApi.sendMessageStream(activeConversationId, text, (chunk) => {
+      let finalPrompt = text;
+      
+      if (file) {
+        // Enviar imagem para o endpoint RAG
+        const uploadResult = await chatApi.uploadImage(file);
+        
+        // Formatar o texto que vai pro chat
+        finalPrompt = `${text}\n\n[Analise a imagem enviada. Segue o resultado do OCR e contexto RAG extraído pelo backend:]\n${uploadResult.anonymized_preview}`;
+      }
+
+      await chatApi.sendMessageStream(activeConversationId, finalPrompt, (chunk) => {
         set((state) => {
           const newMessages = [...state.messages];
           const aiMessageIndex = newMessages.findIndex(m => m.id === tempAiId);
@@ -144,7 +155,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             return {
               ...c,
               updated_at: new Date().toISOString(),
-              title: c.title === 'Nova Conversa' ? text.substring(0, 50) : c.title,
+              title: c.title === 'Nova Conversa' ? (text || 'Análise de Imagem').substring(0, 50) : c.title,
             };
           }
           return c;
