@@ -39,6 +39,26 @@ Para rodar este projeto, você precisará ter instalado:
 3. (Em breve) Como iniciar os Apps (Web/Mobile):
    Instruções detalhadas serão adicionadas nos subdiretórios correspondentes conforme os projetos sejam inicializados.
 
+## 🚀 Como fazer o Deploy (Backend no Cloud Run)
+
+Para fazer o deploy do backend no **Google Cloud Run**, certifique-se de que o Google Cloud CLI (`gcloud`) está instalado e configurado, e então execute os seguintes comandos no diretório `./backend`:
+
+```bash
+cd backend
+gcloud run deploy medicine-chat-backend \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 1Gi \
+  --cpu 2 \
+  --min-instances 0 \
+  --max-instances 2 \
+  --concurrency 80 \
+  --cpu-boost
+```
+
+> **Nota:** As variáveis de ambiente (como banco de dados e chaves de API) já devem estar configuradas no Secret Manager do projeto GCP associado.
+
 ## 🔒 Segurança e Privacidade
 Este projeto lida com dados médicos. Qualquer contribuição deve garantir a proteção de informações pessoais identificáveis (PII). Processos de anonimização estritos devem ser seguidos antes do armazenamento em banco.
 
