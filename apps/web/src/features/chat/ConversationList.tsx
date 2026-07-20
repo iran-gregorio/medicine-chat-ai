@@ -75,8 +75,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     <div
       style={{
         width: '280px',
-        borderRight: '1px solid #E2E8F0',
-        background: 'white',
+        borderRight: '1px solid var(--color-card-border)',
+        background: 'var(--color-dashboard-sidebar)',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
@@ -86,7 +86,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       <div
         style={{
           padding: '20px 16px',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid var(--color-card-border)',
         }}
       >
         <button
@@ -132,8 +132,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               flex: 1,
               padding: '6px 0',
               border: 'none',
-              background: activeTab === 'active' ? '#EFF6FF' : 'transparent',
-              color: activeTab === 'active' ? '#3B82F6' : '#64748B',
+              background: activeTab === 'active' ? 'rgba(59,130,246,0.15)' : 'transparent',
+              color: activeTab === 'active' ? 'var(--color-accent-blue)' : '#94A3B8',
               borderRadius: '8px',
               fontSize: '13px',
               fontWeight: 600,
@@ -149,8 +149,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               flex: 1,
               padding: '6px 0',
               border: 'none',
-              background: activeTab === 'archived' ? '#EFF6FF' : 'transparent',
-              color: activeTab === 'archived' ? '#3B82F6' : '#64748B',
+              background: activeTab === 'archived' ? 'rgba(59,130,246,0.15)' : 'transparent',
+              color: activeTab === 'archived' ? 'var(--color-accent-blue)' : '#94A3B8',
               borderRadius: '8px',
               fontSize: '13px',
               fontWeight: 600,
@@ -191,8 +191,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               style={{
                 width: '32px',
                 height: '32px',
-                border: '3px solid #EFF6FF',
-                borderTop: '3px solid #3B82F6',
+                border: '3px solid rgba(59,130,246,0.2)',
+                borderTop: '3px solid var(--color-accent-blue)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
               }}
@@ -230,17 +230,17 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 style={{
                   padding: '12px',
                   borderRadius: '12px',
-                  background: isActive ? '#EFF6FF' : 'transparent',
+                  background: isActive ? 'rgba(59,130,246,0.1)' : 'transparent',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '10px',
-                  borderLeft: isActive ? '3px solid #3B82F6' : '3px solid transparent',
+                  borderLeft: isActive ? '3px solid var(--color-accent-blue)' : '3px solid transparent',
                   transition: 'all 0.15s',
                   position: 'relative'
                 }}
                 onMouseOver={(e) => {
-                  if (!isActive) e.currentTarget.style.background = '#F8FAFC';
+                  if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 }}
                 onMouseOut={(e) => {
                   if (!isActive) e.currentTarget.style.background = 'transparent';
@@ -251,11 +251,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     width: '36px',
                     height: '36px',
                     borderRadius: '50%',
-                    background: isActive ? '#3B82F6' : '#F1F5F9',
+                    background: isActive ? 'var(--color-accent-blue)' : 'rgba(255,255,255,0.05)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: isActive ? 'white' : '#64748B',
+                    color: isActive ? 'white' : '#94A3B8',
                     flexShrink: 0,
                   }}
                 >
@@ -273,7 +273,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                           flex: 1,
                           fontSize: '13px',
                           padding: '2px 4px',
-                          border: '1px solid #3B82F6',
+                          border: '1px solid var(--color-accent-blue)',
+                          background: 'rgba(0,0,0,0.2)',
+                          color: '#E2E8F0',
                           borderRadius: '4px',
                           outline: 'none',
                           width: '100%',
@@ -301,7 +303,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                       style={{
                         fontWeight: isActive ? 600 : 500,
                         fontSize: '14px',
-                        color: isActive ? '#1E3A8A' : '#334155',
+                        color: isActive ? 'var(--color-accent-blue)' : '#E2E8F0',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -315,7 +317,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     <div
                       style={{
                         fontSize: '11px',
-                        color: '#64748B',
+                        color: '#94A3B8',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -330,7 +332,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     <div
                       style={{
                         fontSize: '10px',
-                        color: isActive ? '#60A5FA' : '#94A3B8',
+                        color: isActive ? 'rgba(96,165,250,0.8)' : '#64748B',
                         marginTop: '4px',
                       }}
                     >
@@ -365,10 +367,10 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                         position: 'absolute',
                         top: '20px',
                         right: 0,
-                        background: 'white',
-                        border: '1px solid #E2E8F0',
+                        background: 'var(--color-card-bg)',
+                        border: '1px solid var(--color-card-border)',
                         borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                         zIndex: 10,
                         padding: '4px',
                         display: 'flex',
@@ -388,13 +390,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                             border: 'none',
                             padding: '8px',
                             fontSize: '12px',
-                            color: '#334155',
+                            color: '#E2E8F0',
                             cursor: 'pointer',
                             textAlign: 'left',
                             borderRadius: '4px',
                             width: '100%'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                           onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                         >
                           <Edit2 size={14} /> Renomear
@@ -416,13 +418,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                             border: 'none',
                             padding: '8px',
                             fontSize: '12px',
-                            color: '#334155',
+                            color: '#E2E8F0',
                             cursor: 'pointer',
                             textAlign: 'left',
                             borderRadius: '4px',
                             width: '100%'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                           onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                         >
                           <Archive size={14} /> Arquivar
@@ -442,13 +444,13 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                             border: 'none',
                             padding: '8px',
                             fontSize: '12px',
-                            color: '#334155',
+                            color: '#E2E8F0',
                             cursor: 'pointer',
                             textAlign: 'left',
                             borderRadius: '4px',
                             width: '100%'
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                           onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                         >
                           <ArchiveRestore size={14} /> Desarquivar

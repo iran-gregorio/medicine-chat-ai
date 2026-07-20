@@ -65,7 +65,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             flexDirection: isUser ? 'row-reverse' : 'row',
           }}
         >
-          <span style={{ fontWeight: 600, fontSize: '12px', color: '#334155' }}>
+          <span style={{ fontWeight: 600, fontSize: '12px', color: '#E2E8F0' }}>
             {isUser ? 'Você' : 'MediCare AI'}
           </span>
           <span style={{ fontSize: '10px', color: '#94A3B8' }}>
@@ -78,11 +78,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           style={{
             padding: '12px 16px',
             borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-            background: isUser ? '#DBEAFE' : 'white',
-            border: isUser ? 'none' : '1px solid #E2E8F0',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            background: isUser ? 'var(--color-accent-blue)' : 'var(--color-card-bg)',
+            border: isUser ? 'none' : '1px solid var(--color-card-border)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             fontSize: '14px',
-            color: '#1E293B',
+            color: isUser ? '#FFFFFF' : '#F8FAFC',
             lineHeight: 1.6,
             wordBreak: 'break-word',
           }}
@@ -106,10 +106,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   <li style={{ marginBottom: '4px', lineHeight: 1.6 }}>{children}</li>
                 ),
                 strong: ({ children }) => (
-                  <strong style={{ fontWeight: 700, color: '#0F172A' }}>{children}</strong>
+                  <strong style={{ fontWeight: 700, color: '#FFFFFF' }}>{children}</strong>
                 ),
                 em: ({ children }) => (
-                  <em style={{ fontStyle: 'italic', color: '#334155' }}>{children}</em>
+                  <em style={{ fontStyle: 'italic', color: '#CBD5E1' }}>{children}</em>
                 ),
                 code: ({ children, className }) => {
                   const isBlock = !!className;
@@ -117,15 +117,15 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                     <code
                       style={{
                         display: 'block',
-                        background: '#F1F5F9',
-                        border: '1px solid #E2E8F0',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid var(--color-card-border)',
                         borderRadius: '8px',
                         padding: '10px 12px',
                         fontSize: '13px',
                         fontFamily: '"Fira Code", "Courier New", monospace',
                         overflowX: 'auto',
                         whiteSpace: 'pre',
-                        color: '#334155',
+                        color: '#E2E8F0',
                         lineHeight: 1.6,
                         marginBottom: '8px',
                       }}
@@ -135,13 +135,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   ) : (
                     <code
                       style={{
-                        background: '#F1F5F9',
-                        border: '1px solid #E2E8F0',
+                        background: 'rgba(59,130,246,0.15)',
+                        border: '1px solid rgba(59,130,246,0.3)',
                         borderRadius: '4px',
                         padding: '1px 5px',
                         fontSize: '12.5px',
                         fontFamily: '"Fira Code", "Courier New", monospace',
-                        color: '#3B82F6',
+                        color: '#93C5FD',
                       }}
                     >
                       {children}
@@ -154,27 +154,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   </pre>
                 ),
                 h1: ({ children }) => (
-                  <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: '8px 0 6px 0', lineHeight: 1.3 }}>
+                  <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', margin: '8px 0 6px 0', lineHeight: 1.3 }}>
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '8px 0 4px 0', lineHeight: 1.35 }}>
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', margin: '8px 0 4px 0', lineHeight: 1.35 }}>
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B', margin: '6px 0 4px 0', lineHeight: 1.4 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#E2E8F0', margin: '6px 0 4px 0', lineHeight: 1.4 }}>
                     {children}
                   </h3>
                 ),
                 blockquote: ({ children }) => (
                   <blockquote
                     style={{
-                      borderLeft: '3px solid #3B82F6',
+                      borderLeft: '3px solid var(--color-accent-blue)',
                       paddingLeft: '12px',
                       margin: '4px 0 8px 0',
-                      color: '#475569',
+                      color: '#94A3B8',
                       fontStyle: 'italic',
                     }}
                   >
@@ -182,27 +182,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   </blockquote>
                 ),
                 hr: () => (
-                  <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '10px 0' }} />
+                  <hr style={{ border: 'none', borderTop: '1px solid var(--color-card-border)', margin: '10px 0' }} />
                 ),
                 a: ({ href, children }) => (
                   <a
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}
+                    style={{ color: '#60A5FA', textDecoration: 'underline', fontWeight: 500 }}
                   >
                     {children}
                   </a>
                 ),
                 table: ({ children }) => (
-                  <div style={{ overflowX: 'auto', marginBottom: '8px', border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+                  <div style={{ overflowX: 'auto', marginBottom: '8px', border: '1px solid var(--color-card-border)', borderRadius: '8px' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
                       {children}
                     </table>
                   </div>
                 ),
                 thead: ({ children }) => (
-                  <thead style={{ backgroundColor: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                  <thead style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderBottom: '2px solid var(--color-card-border)' }}>
                     {children}
                   </thead>
                 ),
@@ -210,17 +210,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   <tbody>{children}</tbody>
                 ),
                 tr: ({ children }) => (
-                  <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  <tr style={{ borderBottom: '1px solid var(--color-card-border)' }}>
                     {children}
                   </tr>
                 ),
                 th: ({ children }) => (
-                  <th style={{ padding: '10px 12px', fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 600, color: '#F8FAFC', whiteSpace: 'nowrap' }}>
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>
+                  <td style={{ padding: '10px 12px', color: '#E2E8F0' }}>
                     {children}
                   </td>
                 ),

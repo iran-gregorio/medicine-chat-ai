@@ -37,39 +37,19 @@ function Sidebar({ isMobile }: { isMobile: boolean }) {
 
   if (isMobile) {
     return (
-      <nav style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '60px',
-        background: 'white',
-        borderTop: '1px solid #E2E8F0',
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        zIndex: 100,
-        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
-      }}>
+      <nav className="fixed bottom-0 left-0 right-0 h-[60px] bg-dashboard-sidebar border-t border-card-border flex justify-around items-center z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
-            style={({ isActive }) => ({
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
-              textDecoration: 'none',
-              color: isActive ? '#3B82F6' : '#94A3B8',
-              flex: 1,
-              height: '100%',
-            })}
+            className={({ isActive }) => `
+              flex flex-col items-center justify-center gap-1 no-underline flex-1 h-full
+              ${isActive ? 'text-accent-blue' : 'text-slate-400'}
+            `}
           >
             <Icon size={20} />
-            <span style={{ fontSize: '10px', fontWeight: 600 }}>{t(label)}</span>
+            <span className="text-[10px] font-semibold">{t(label)}</span>
           </NavLink>
         ))}
       </nav>
@@ -77,80 +57,46 @@ function Sidebar({ isMobile }: { isMobile: boolean }) {
   }
 
   return (
-    <aside style={{
-      width: '240px',
-      minHeight: '100vh',
-      background: 'white',
-      borderRight: '1px solid #E2E8F0',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      bottom: 0,
-      zIndex: 50,
-      boxShadow: '2px 0 16px rgba(0,0,0,0.04)',
-    }}>
-      {/* Logo */}
-      <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: '12px',
-            background: 'linear-gradient(135deg, #60A5FA, #3B82F6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(59,130,246,0.35)',
-          }}>
-            <Bot size={22} color="white" />
+    <aside className="w-64 bg-dashboard-sidebar border-r border-white/5 flex flex-col justify-between py-8 px-6 h-full flex-shrink-0 z-50">
+      {/* Top Nav Items */}
+      <div className="space-y-8">
+        {/* Logo (Optional/Adapted) */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center shadow-[0_4px_12px_rgba(59,130,246,0.35)]">
+            <Bot size={22} className="text-white" />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '15px', color: '#0F172A' }}>MediCare AI</div>
-            <div style={{ fontSize: '11px', color: '#64748B' }}>Assistente Médico</div>
+            <div className="font-bold text-[15px] text-slate-50">MediCare AI</div>
+            <div className="text-[11px] text-slate-400">Assistente Médico</div>
           </div>
         </div>
+
+        <nav className="space-y-6">
+          {navItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              className={({ isActive }) => `
+                flex items-center space-x-3 transition-colors group text-sm font-medium
+                ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}
+              `}
+            >
+              <Icon className="h-5 w-5" />
+              <span>{t(label)}</span>
+            </NavLink>
+          ))}
+        </nav>
       </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1, padding: '16px 12px' }}>
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '11px 14px',
-              borderRadius: '12px',
-              marginBottom: '4px',
-              textDecoration: 'none',
-              fontWeight: isActive ? 600 : 500,
-              fontSize: '14px',
-              background: isActive ? '#EFF6FF' : 'transparent',
-              color: isActive ? '#3B82F6' : '#64748B',
-              transition: 'all 0.15s',
-            })}
-          >
-            <Icon size={18} />
-            {t(label)}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div style={{ padding: '16px', borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {/* Bottom Action */}
+      <div className="border-t border-white/5 pt-6">
         <button
           onClick={handleLogout}
-          style={{
-            width: '100%', padding: '8px 14px',
-            borderRadius: '10px', border: 'none',
-            background: 'transparent', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 500, color: '#EF4444',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          }}
+          className="flex items-center space-x-3 text-red-400 hover:text-red-300 transition-colors w-full"
         >
-          <LogOut size={16} />
-          {t('auth.logout', 'Sair')}
+          <LogOut className="h-5 w-5" />
+          <span className="text-sm font-medium">{t('auth.logout', 'Sair')}</span>
         </button>
       </div>
     </aside>
@@ -167,17 +113,9 @@ function AuthenticatedLayout() {
   }, []);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F8FF', flexDirection: isMobile ? 'column' : 'row' }}>
+    <div className="flex h-screen overflow-hidden bg-main-gradient text-slate-200">
       <Sidebar isMobile={isMobile} />
-      <main style={{ 
-        marginLeft: isMobile ? '0' : '240px', 
-        paddingBottom: isMobile ? '60px' : '0', 
-        flex: 1, 
-        height: '100vh', 
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
     </div>

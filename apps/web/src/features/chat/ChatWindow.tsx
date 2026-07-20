@@ -47,7 +47,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #F0F4FF, #E0E7FF)',
+          background: 'transparent',
           padding: '24px',
           textAlign: 'center',
           position: 'relative',
@@ -58,8 +58,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             onClick={onToggleSidebar}
             style={{
               position: 'absolute', top: '16px', left: '16px',
-              background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', padding: '8px',
-              color: '#64748B', display: 'flex', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              background: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)', borderRadius: '8px', cursor: 'pointer', padding: '8px',
+              color: '#94A3B8', display: 'flex', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}
           >
             <Menu size={20} />
@@ -82,11 +82,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         >
           <Bot size={40} />
         </div>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#F8FAFC', marginBottom: '8px' }}>
           Olá! Eu sou o MediCare AI
         </h2>
-        <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '360px', lineHeight: 1.6 }}>
-          Selecione uma conversa existente ao lado ou clique em <strong>"Nova Conversa"</strong> para
+        <p style={{ fontSize: '14px', color: '#94A3B8', maxWidth: '360px', lineHeight: 1.6 }}>
+          Selecione uma conversa existente ao lado ou clique em <strong style={{color: '#F8FAFC'}}>"Nova Conversa"</strong> para
           iniciar uma nova consulta médica inteligente.
         </p>
 
@@ -107,19 +107,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: '#F8FAFC',
+        background: 'var(--color-dashboard-dark)',
       }}
     >
       {/* Header */}
       <div
         style={{
           padding: '14px 24px',
-          background: 'white',
-          borderBottom: '1px solid #E2E8F0',
+          background: 'var(--color-card-bg)',
+          borderBottom: '1px solid var(--color-card-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -128,7 +128,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               onClick={onToggleSidebar}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
-                color: '#64748B', display: 'flex', alignItems: 'center'
+                color: '#94A3B8', display: 'flex', alignItems: 'center'
               }}
             >
               <Menu size={24} />
@@ -153,7 +153,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               style={{
                 fontSize: '15px',
                 fontWeight: 700,
-                color: '#1E293B',
+                color: '#F8FAFC',
                 margin: 0,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -165,7 +165,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E' }} />
-              <span style={{ fontSize: '11px', color: '#64748B' }}>Online — Medicare AI</span>
+              <span style={{ fontSize: '11px', color: '#94A3B8' }}>Online — Medicare AI</span>
             </div>
           </div>
         </div>
@@ -176,7 +176,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           style={{
             background: 'none',
             border: 'none',
-            color: '#64748B',
+            color: '#94A3B8',
             cursor: 'pointer',
             padding: '6px',
             borderRadius: '50%',
@@ -184,7 +184,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = '#F1F5F9')}
+          onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
           onMouseOut={(e) => (e.currentTarget.style.background = 'none')}
         >
           <RefreshCw size={18} className={isLoading ? 'spin-anim' : ''} />
@@ -195,8 +195,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {error && (
         <div
           style={{
-            background: '#FEF2F2',
-            borderBottom: '1px solid #FEE2E2',
+            background: 'rgba(239, 68, 68, 0.1)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
             padding: '10px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -251,8 +251,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               style={{
                 width: '24px',
                 height: '24px',
-                border: '2px solid #E2E8F0',
-                borderTop: '2px solid #3B82F6',
+                border: '2px solid rgba(255,255,255,0.1)',
+                borderTop: '2px solid var(--color-accent-blue)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
               }}
@@ -301,14 +301,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
             <div
               style={{
-                background: 'white',
-                border: '1px solid #E2E8F0',
+                background: 'var(--color-card-bg)',
+                border: '1px solid var(--color-card-border)',
                 borderRadius: '18px',
                 padding: '12px 18px',
                 display: 'flex',
                 gap: '5px',
                 alignItems: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
               {[0, 0.2, 0.4].map((delay, i) => (
@@ -332,8 +332,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Input Bar */}
       <div
         style={{
-          background: 'white',
-          borderTop: '1px solid #E2E8F0',
+          background: 'var(--color-card-bg)',
+          borderTop: '1px solid var(--color-card-border)',
           padding: '16px 24px',
         }}
       >

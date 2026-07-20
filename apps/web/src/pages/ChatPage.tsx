@@ -40,27 +40,20 @@ export default function ChatPage() {
     null;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', position: 'relative' }}>
+    <div className="flex h-full w-full overflow-hidden relative">
       {isMobile && isSidebarOpen && (
         <div 
           onClick={() => setIsSidebarOpen(false)}
-          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }}
+          className="absolute inset-0 bg-black/40 z-40"
         />
       )}
       
-      <div style={{
-        height: '100%',
-        ...(isMobile ? {
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 50,
-          transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.3s ease',
-          width: '280px'
-        } : {})
-      }}>
+      <div 
+        className={`h-full ${isMobile ? 'absolute left-0 top-0 bottom-0 z-50 w-[280px] transition-transform duration-300' : ''}`}
+        style={{
+          transform: isMobile ? (isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none'
+        }}
+      >
         <ConversationList
           conversations={conversations}
           archivedConversations={archivedConversations}
@@ -80,7 +73,7 @@ export default function ChatPage() {
         />
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+      <div className="flex-1 flex flex-col w-full min-w-0">
         <ChatWindow
           activeConversation={activeConversation}
           messages={messages}

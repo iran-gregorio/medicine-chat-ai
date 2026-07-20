@@ -97,21 +97,21 @@ export default function RegisterPage() {
   };
 
   const Requirement = ({ met, text }: { met: boolean; text: string }) => (
-    <div className={`flex items-center text-xs ${met ? 'text-green-600' : 'text-slate-500'}`}>
+    <div className={`flex items-center text-xs ${met ? 'text-green-500' : 'text-slate-400'}`}>
       {met ? <CheckCircle2 size={12} className="mr-1" /> : <XCircle size={12} className="mr-1" />}
       {text}
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-main-gradient py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-card-bg p-8 rounded-2xl shadow-sm border border-white/10 backdrop-blur">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
             <Bot size={28} className="text-white" />
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-slate-900">MediCare AI</h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          <h2 className="text-center text-3xl font-extrabold text-white">MediCare AI</h2>
+          <p className="mt-2 text-center text-sm text-slate-400">
             {t('auth.createYourAccount', 'Crie sua conta gratuitamente')}
           </p>
         </div>
@@ -121,14 +121,14 @@ export default function RegisterPage() {
             <div 
               role="alert" 
               aria-live="assertive"
-              className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100"
+              className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm border border-red-500/20"
             >
               {error}
             </div>
           )}
           
           <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="full_name" className="block text-sm font-medium text-slate-300">
               {t('auth.fullName', 'Nome Completo')}
             </label>
               <input
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                 required
                 value={formData.full_name}
                 onChange={handleChange}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="João da Silva"
                 autoComplete="name"
                 aria-invalid={!!error}
@@ -146,7 +146,7 @@ export default function RegisterPage() {
             </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
               {t('auth.email', 'E-mail')}
             </label>
               <input
@@ -156,7 +156,7 @@ export default function RegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="joao@exemplo.com"
                 autoComplete="email"
                 aria-invalid={!!error}
@@ -164,7 +164,7 @@ export default function RegisterPage() {
             </div>
 
           <div>
-            <label htmlFor="phone_number" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="phone_number" className="block text-sm font-medium text-slate-300">
               {t('auth.phoneOptional', 'Telefone (Opcional)')}
             </label>
               <input
@@ -174,7 +174,7 @@ export default function RegisterPage() {
                 inputMode="numeric"
                 value={formData.phone_number}
                 onChange={handlePhoneChange}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="(11) 99999-9999"
                 autoComplete="tel"
                 aria-invalid={!!error}
@@ -182,7 +182,7 @@ export default function RegisterPage() {
             </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
               {t('auth.password', 'Senha')}
             </label>
               <input
@@ -192,14 +192,14 @@ export default function RegisterPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="••••••••"
                 autoComplete="new-password"
                 aria-invalid={!!error || (formData.password.length > 0 && !isValid)}
                 aria-describedby="password-requirements"
               />
               
-              <div id="password-requirements" className="mt-2 space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div id="password-requirements" className="mt-2 space-y-1 bg-black/20 p-3 rounded-lg border border-white/5">
               <Requirement met={comp.length} text="Pelo menos 8 caracteres" />
               <Requirement met={comp.uppercase} text="Uma letra maiúscula" />
               <Requirement met={comp.lowercase} text="Uma letra minúscula" />
@@ -209,7 +209,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="confirm_password" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="confirm_password" className="block text-sm font-medium text-slate-300">
               {t('auth.confirmPassword', 'Confirmar Senha')}
             </label>
               <input
@@ -219,7 +219,7 @@ export default function RegisterPage() {
                 required
                 value={formData.confirm_password}
                 onChange={handleChange}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="••••••••"
                 autoComplete="new-password"
                 aria-invalid={!!error || (formData.password !== formData.confirm_password && formData.confirm_password.length > 0)}
@@ -239,8 +239,8 @@ export default function RegisterPage() {
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-slate-600">{t('auth.alreadyHaveAccount', 'Já tem uma conta?')} </span>
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+          <span className="text-slate-400">{t('auth.alreadyHaveAccount', 'Já tem uma conta?')} </span>
+          <Link to="/login" className="font-medium text-blue-500 hover:text-blue-400 transition-colors">
             {t('auth.loginHere', 'Entrar aqui')}
           </Link>
         </div>

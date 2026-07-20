@@ -59,18 +59,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        background: '#F8FAFC',
+        background: 'var(--color-dashboard-dark)',
         borderRadius: '24px',
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--color-card-border)',
         padding: '6px 6px 6px 16px',
         transition: 'border-color 0.2s',
       }}
       onFocus={(e) => {
-        e.currentTarget.style.borderColor = '#3B82F6';
-        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)';
+        e.currentTarget.style.borderColor = 'var(--color-accent-blue)';
+        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.25)';
       }}
       onBlur={(e) => {
-        e.currentTarget.style.borderColor = '#E2E8F0';
+        e.currentTarget.style.borderColor = 'var(--color-card-border)';
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
@@ -114,7 +114,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
           background: 'none',
           border: 'none',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          color: '#64748B',
+          color: '#94A3B8',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -143,7 +143,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
           border: 'none',
           background: 'transparent',
           fontSize: '14px',
-          color: '#1E293B',
+          color: '#F8FAFC',
           outline: 'none',
           fontFamily: 'inherit',
           padding: '8px 0',
@@ -157,8 +157,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
           height: '36px',
           borderRadius: '50%',
           background: (!input.trim() && !selectedFile) || disabled
-            ? '#E2E8F0'
-            : 'linear-gradient(135deg, #60A5FA, #3B82F6)',
+            ? 'rgba(255,255,255,0.05)'
+            : 'var(--color-accent-blue)',
           border: 'none',
           cursor: (!input.trim() && !selectedFile) || disabled ? 'not-allowed' : 'pointer',
           display: 'flex',

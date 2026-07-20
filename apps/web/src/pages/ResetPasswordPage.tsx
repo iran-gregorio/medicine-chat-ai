@@ -57,15 +57,15 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center">
-          <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6">
-            <CheckCircle size={32} className="text-green-600" />
+      <div className="min-h-screen flex items-center justify-center bg-main-gradient py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 bg-card-bg p-8 rounded-2xl shadow-sm border border-white/10 backdrop-blur text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6">
+            <CheckCircle size={32} className="text-green-400" />
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-900">
+          <h2 className="text-3xl font-extrabold text-white">
             {t('auth.passwordResetSuccess', 'Senha Redefinida!')}
           </h2>
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-slate-400">
             {t('auth.redirectingToLogin', 'Sua senha foi alterada com sucesso. Redirecionando para o login...')}
           </p>
         </div>
@@ -74,16 +74,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-main-gradient py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-card-bg p-8 rounded-2xl shadow-sm border border-white/10 backdrop-blur">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
             <Bot size={28} className="text-white" />
           </div>
-          <h2 className="text-center text-3xl font-extrabold text-slate-900">
+          <h2 className="text-center text-3xl font-extrabold text-white">
             {t('auth.createNewPassword', 'Criar Nova Senha')}
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
+          <p className="mt-2 text-center text-sm text-slate-400">
             {t('auth.enterNewPassword', 'Digite sua nova senha abaixo.')}
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
             <div 
               role="alert" 
               aria-live="assertive"
-              className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100"
+              className="bg-red-500/10 text-red-400 p-3 rounded-lg text-sm border border-red-500/20"
             >
               {error}
             </div>
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
                 {t('auth.newPassword', 'Nova Senha')}
               </label>
               <input
@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
                 disabled={!token}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-white/5 disabled:text-slate-500"
                 placeholder="••••••••"
                 autoComplete="new-password"
                 aria-invalid={!!error}
@@ -120,7 +120,7 @@ export default function ResetPasswordPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300">
                 {t('auth.confirmNewPassword', 'Confirmar Nova Senha')}
               </label>
               <input
@@ -131,7 +131,7 @@ export default function ResetPasswordPage() {
                 disabled={!token}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-white/10 rounded-lg shadow-sm bg-white/5 text-white placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-white/5 disabled:text-slate-500"
                 placeholder="••••••••"
                 autoComplete="new-password"
                 aria-invalid={!!error || (password !== confirmPassword && confirmPassword.length > 0)}
@@ -152,7 +152,7 @@ export default function ResetPasswordPage() {
         </form>
         
         <div className="mt-6 text-center text-sm">
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+          <Link to="/login" className="font-medium text-blue-500 hover:text-blue-400 transition-colors">
             {t('auth.cancelAndReturnToLogin', 'Cancelar e voltar ao login')}
           </Link>
         </div>
