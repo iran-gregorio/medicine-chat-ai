@@ -18,7 +18,7 @@ SYNC_DATABASE_URL = DATABASE_URL.replace("+asyncpg", "+psycopg")
 llm = ChatOpenAI(
     api_key=OPENROUTER_API_KEY,
     base_url="https://openrouter.ai/api/v1",
-    model="google/gemini-2.5-flash-lite",
+    model="google/gemini-3.1-flash-lite",
     temperature=0.0,
     tiktoken_model_name="gpt-3.5-turbo"
 )
